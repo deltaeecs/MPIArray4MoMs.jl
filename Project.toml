@@ -3,6 +3,10 @@ uuid = "b7f3fe35-ff1f-4dc5-b861-bd211d5a9a4b"
 authors = ["deltaeecs <1225385871@qq.com> and contributors"]
 version = "0.1.0"
 
+[deps]
+MPI = "da04e1cc-30fd-572f-bb4f-1f8673147195"
+Primes = "27ebfcd6-29c5-5fa9-bf4b-fb8fc14df3ae"
+
 [compat]
 julia = "1"
 
