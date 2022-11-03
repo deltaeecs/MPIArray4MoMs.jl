@@ -2,6 +2,7 @@ module MPIArray4MoMs
 
 using MPI
 using Primes
+using OffsetArrays
 
 export  MPIArray,
         mpiarray,

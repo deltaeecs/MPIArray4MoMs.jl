@@ -21,6 +21,7 @@ MPIArray used in MoM.
 mutable struct MPIArray{T, I, N}<:AbstractArray{T, N}
     data::SubOrArray{T, N}
     indices::I
+    dataOffset::OffsetArray
     comm::MPI.Comm
     myrank::Int
     size::NTuple{N,Int}
@@ -36,9 +37,10 @@ MPIMatrix{T, I} = MPIArray{T, I, 2} where {T, I}
 
 Base.size(A::MPIArray) = A.size
 Base.size(A::MPIArray, i::Integer) = A.size[i]
+Base.length(A::MPIArray) = prod(A.size)
 Base.eltype(::MPIArray{T, I, N}) where {T, I, N} = T
-Base.getindex(A::MPIArray) = getindex(A.data)
-Base.setindex(A::MPIArray, I...) = setindex(A.data, I...)
+Base.getindex(A::MPIArray, I...) = getindex(A.dataOffset, I...)
+Base.setindex!(A::MPIArray, X, I...) = setindex!(A.dataOffset, X, I...)
 Base.fill!(A::MPIArray, args...)  = fill!(A.data, args...)
 
 """
@@ -72,7 +74,7 @@ function sync!(A::MPIArray)
 
 end
 
-# mpiarray(T::DataType, Asize::NTuple{N, Int}; args...)  where {N<:Integer}  = mpiarray(T, Asize...; args...)
+mpiarray(T::DataType, Asize::NTuple{N, Int}; args...)  where {N}  = mpiarray(T, Asize...; args...)
 
 """
     mpiarray(T::DataType, Asize::Vararg{Int, N}; buffersize = 0, comm = MPI.COMM_WORLD, partitation = (1, MPI.Comm_size(comm))) where {N}
@@ -80,7 +82,7 @@ end
     construct a mpi array with size `Asize` and distributed on MPI `comm` with 
 TBW
 """
-function mpiarray(T::DataType, Asize::NTuple{N, Int}; buffersize = 0, comm = MPI.COMM_WORLD, 
+function mpiarray(T::DataType, Asize::Vararg{Int, N}; buffersize = 0, comm = MPI.COMM_WORLD, 
     partitation = Tuple(map(i -> begin (i < length(Asize)) ? 1 : MPI.Comm_size(comm) end, 1:N))) where {N}
 
     rank = MPI.Comm_rank(comm)
@@ -105,9 +107,9 @@ function mpiarray(T::DataType, Asize::NTuple{N, Int}; buffersize = 0, comm = MPI
     rrank2indices = remoterank2indices(remoteranks, indices, rank2ghostindices; localrank = rank)
 
     dataInGhostData = Tuple(map((i, gi) -> i .- (first(gi) - 1), indices, ghostindices))
-    data = view(ghostdata, dataInGhostData...)
+    data = buffersize == 0 ? ghostdata : view(ghostdata, dataInGhostData...)
 
-    A = MPIArray{T, typeof(indices), N}(data, indices, comm, rank, Asize, rank2indices, ghostdata, ghostindices, grank2gindices, rrank2indices)
+    A = MPIArray{T, typeof(indices), N}(data, indices, OffsetArray(data, indices), comm, rank, Asize, rank2indices, ghostdata, ghostindices, grank2gindices, rrank2indices)
 
     sync!(A)
 
