@@ -34,6 +34,12 @@ end
 
 MPIVector{T, I} = MPIArray{T, I, 1} where {T, I}
 MPIMatrix{T, I} = MPIArray{T, I, 2} where {T, I}
+SubMPIVector{T, I, SI, L}  =   SubArray{T, 1, MPIArray{T, I, MN}, SI, L} where {T, I, MN, SI, L}
+SubMPIMatrix{T, I, SI, L}  =   SubArray{T, 2, MPIArray{T, I, MN}, SI, L} where {T, I, MN, SI, L}
+SubMPIArray{T, I, N, SI, L}  = SubArray{T, N, MPIArray{T, I, MN}, SI, L} where {T, I, N, MN, SI, L}
+SubOrMPIVector{T, I}  = Union{MPIVector{T, I}, SubMPIVector{T, I, SI, L}} where {T, I, SI, L}
+SubOrMPIMatrix{T, I}  = Union{MPIMatrix{T, I}, SubMPIMatrix{T, I, SI, L}} where {T, I, SI, L}
+SubOrMPIArray{T, I, N}= Union{MPIArray{T, I, N}, SubMPIArray{T, I, N, SI, L}} where {T, I, N, SI, L}
 
 Base.size(A::MPIArray) = A.size
 Base.size(A::MPIArray, i::Integer) = A.size[i]
@@ -43,36 +49,6 @@ Base.getindex(A::MPIArray, I...) = getindex(A.dataOffset, I...)
 Base.setindex!(A::MPIArray, X, I...) = setindex!(A.dataOffset, X, I...)
 Base.fill!(A::MPIArray, args...)  = fill!(A.data, args...)
 
-"""
-    sync!(A::MPIArray)
-
-    Synchronize data in `A` between MPI ranks.
-
-TBW
-"""
-function sync!(A::MPIArray)
-
-    np = MPI.Comm_size(A.comm)
-    rank = A.myrank
-    # begin sync
-    req_all = MPI.Request[]
-    begin
-        for (ghostrank, indices) in A.grank2ghostindices
-            req = MPI.Irecv!(view(A.ghostdata, indices...), ghostrank, ghostrank*np + rank, A.comm)
-            push!(req_all, req)
-        end
-        for (remoterank, indices) in A.rrank2localindices
-            req = MPI.Isend(A.data[indices...], remoterank, rank*np + remoterank, A.comm)
-            push!(req_all, req)
-        end
-    end
-    MPI.Waitall!(req_all)
-
-    MPI.Barrier(A.comm)
-
-    nothing
-
-end
 
 mpiarray(T::DataType, Asize::NTuple{N, Int}; args...)  where {N}  = mpiarray(T, Asize...; args...)
 
@@ -115,5 +91,56 @@ function mpiarray(T::DataType, Asize::Vararg{Int, N}; buffersize = 0, comm = MPI
 
     MPI.Barrier(comm)
     return A
+
+end
+
+"""
+    sync!(A::MPIArray)
+
+    Synchronize data in `A` between MPI ranks.
+
+TBW
+"""
+function sync!(A::MPIArray)
+
+    np = MPI.Comm_size(A.comm)
+    rank = A.myrank
+    # begin sync
+    req_all = MPI.Request[]
+    begin
+        for (ghostrank, indices) in A.grank2ghostindices
+            req = MPI.Irecv!(view(A.ghostdata, indices...), ghostrank, ghostrank*np + rank, A.comm)
+            push!(req_all, req)
+        end
+        for (remoterank, indices) in A.rrank2localindices
+            req = MPI.Isend(A.data[indices...], remoterank, rank*np + remoterank, A.comm)
+            push!(req_all, req)
+        end
+    end
+    MPI.Waitall!(req_all)
+
+    MPI.Barrier(A.comm)
+
+    nothing
+
+end
+
+
+function gather(A::MPIArray; root = 0)
+
+    rank = MPI.Comm_rank(A.comm)
+
+    Alc = rank == root ? zeros(eltype(A), A.size) : nothing
+
+    MPI.Isend(Array(A.data), A.comm; dest = root)
+    
+    if rank == root
+        reqs =  map((rk, indices) -> MPI.Irecv!(view(Alc, indices...), A.comm; source = rk), keys(A.rank2indices), values(A.rank2indices))
+        MPI.Waitall!(reqs)
+    else
+        nothing
+    end
+
+    return Alc
 
 end

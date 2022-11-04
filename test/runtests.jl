@@ -1,4 +1,5 @@
 using MPIArray4MoMs
+using LinearAlgebra
 using Test
 
 @testset "MPIArray4MoMs.jl" begin
