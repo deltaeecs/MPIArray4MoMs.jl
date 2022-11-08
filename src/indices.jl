@@ -55,6 +55,9 @@ function slicedim2mpi(sz::Int, nc::Int)
     end
 end
 
+function sizechunks2cuts(Asize, chunks)
+    map(slicedim2mpi, Asize, chunks)
+end
 
 """
     rank_idxs(Asize, chunks)
@@ -65,7 +68,7 @@ end
 TBW
 """
 function rank2idxs(Asize, chunks)
-    cuts = map(slicedim2mpi, Asize, chunks)
+    cuts = sizechunks2cuts(Asize, chunks)
     n = length(Asize)
     idxs = Array{NTuple{n,UnitRange{Int}}}(undef, chunks...)
     for cidx in CartesianIndices(tuple(chunks...))

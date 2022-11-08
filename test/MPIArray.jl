@@ -60,7 +60,7 @@ end
 
 Alc = gather(A)
 
-@show Alc
+display(Alc)
 
 MPI.Finalize()
 # display(t)
