@@ -30,10 +30,10 @@ fill!(x, 1)
 
 Av = view(A, 1, A.indices[2])
 
-  x ⋅ x
+@show  x ⋅ x
 @show Av ⋅ Av
 @show Av ⋅ x
-@show x ⋅ Av
+@show  x ⋅ Av
 
 t1 = @timed for _ in 1:100000
     x ⋅ x

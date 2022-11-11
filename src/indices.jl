@@ -55,26 +55,31 @@ function slicedim2mpi(sz::Int, nc::Int)
     end
 end
 
-function sizechunks2cuts(Asize, chunks)
+function sizeChunks2cuts(Asize, chunks)
     map(slicedim2mpi, Asize, chunks)
 end
 
+function sizeChunksCuts2indices(Asize, chunks, cuts)
+    n = length(Asize)
+    idxs = Array{NTuple{n,UnitRange{Int}}, n}(undef, chunks...)
+    for cidx in CartesianIndices(tuple(chunks...))
+        idxs[cidx.I...] = ntuple(i -> (cuts[i][cidx[i]]:cuts[i][cidx[i] + 1] - 1), n)
+    end
+
+    return idxs
+end
+
 """
-    rank_idxs(Asize, chunks)
+    sizeChunks2idxs(Asize, chunks)
 
     Borrowed form DistributedArray.jl, get the slice of matrix
     size Asize on each dimension with chunks.
 
 TBW
 """
-function rank2idxs(Asize, chunks)
-    cuts = sizechunks2cuts(Asize, chunks)
-    n = length(Asize)
-    idxs = Array{NTuple{n,UnitRange{Int}}}(undef, chunks...)
-    for cidx in CartesianIndices(tuple(chunks...))
-        idxs[cidx.I...] = ntuple(i -> (cuts[i][cidx[i]]:cuts[i][cidx[i] + 1] - 1), n)
-    end
-    return idxs
+function sizeChunks2idxs(Asize, chunks)
+    cuts = sizeChunks2cuts(Asize, chunks)
+    return sizeChunksCuts2indices(Asize, chunks, cuts)
 end
 
 

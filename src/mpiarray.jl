@@ -64,7 +64,7 @@ function mpiarray(T::DataType, Asize::Vararg{Int, N}; buffersize = 0, comm = MPI
     rank = MPI.Comm_rank(comm)
     np   = MPI.Comm_size(comm)
 
-    allindices = rank2idxs(Asize, partitation)
+    allindices   = sizeChunks2idxs(Asize, partitation)
     rank2indices = Dict(zip(0:(np-1), allindices))
     indices = rank2indices[rank]
 
@@ -117,7 +117,7 @@ function sync!(A::MPIArray)
             push!(req_all, req)
         end
     end
-    MPI.Waitall!(req_all)
+    MPI.Waitall(MPI.RequestSet(req_all), MPI.Status)
 
     MPI.Barrier(A.comm)
 
@@ -132,14 +132,15 @@ function gather(A::MPIArray; root = 0)
 
     Alc = rank == root ? zeros(eltype(A), A.size) : nothing
 
-    MPI.Isend(Array(A.data), A.comm; dest = root)
+    reqs = [MPI.Isend(Array(A.data), A.comm; dest = root)]
     
     if rank == root
-        reqs =  map((rk, indices) -> MPI.Irecv!(view(Alc, indices...), A.comm; source = rk), keys(A.rank2indices), values(A.rank2indices))
-        MPI.Waitall!(reqs)
+        append!(reqs, map((rk, indices) -> MPI.Irecv!(view(Alc, indices...), A.comm; source = rk), keys(A.rank2indices), values(A.rank2indices)))
     else
         nothing
     end
+
+    MPI.Waitall(MPI.RequestSet(reqs), MPI.Status)
 
     return Alc
 
