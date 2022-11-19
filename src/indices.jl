@@ -63,7 +63,13 @@ function sizeChunksCuts2indices(Asize, chunks, cuts)
     n = length(Asize)
     idxs = Array{NTuple{n,UnitRange{Int}}, n}(undef, chunks...)
     for cidx in CartesianIndices(tuple(chunks...))
-        idxs[cidx.I...] = ntuple(i -> (cuts[i][cidx[i]]:cuts[i][cidx[i] + 1] - 1), n)
+        if n > 1
+            idxs[cidx.I...] = ntuple(i -> (cuts[i][cidx[i]]:cuts[i][cidx[i] + 1] - 1), n)
+        elseif n == 1
+            idxs[cidx.I...] = (cuts[cidx[1]]:cuts[cidx[1] + 1] - 1, )
+        else
+            throw("0 dim array not supported.")
+        end
     end
 
     return idxs
