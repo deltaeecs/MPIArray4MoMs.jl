@@ -59,14 +59,12 @@ function sizeChunks2cuts(Asize, chunks)
     map(slicedim2mpi, Asize, chunks)
 end
 
-function sizeChunksCuts2indices(Asize, chunks, cuts)
+function sizeChunksCuts2indices(Asize, chunks, cuts::Tuple)
     n = length(Asize)
     idxs = Array{NTuple{n,UnitRange{Int}}, n}(undef, chunks...)
     for cidx in CartesianIndices(tuple(chunks...))
-        if n > 1
+        if n > 0
             idxs[cidx.I...] = ntuple(i -> (cuts[i][cidx[i]]:cuts[i][cidx[i] + 1] - 1), n)
-        elseif n == 1
-            idxs[cidx.I...] = (cuts[cidx[1]]:cuts[cidx[1] + 1] - 1, )
         else
             throw("0 dim array not supported.")
         end
@@ -74,6 +72,17 @@ function sizeChunksCuts2indices(Asize, chunks, cuts)
 
     return idxs
 end
+
+function sizeChunksCuts2indices(Asize, chunks, cuts::UnitRange)
+    n = length(Asize)
+    idxs = Array{NTuple{n,UnitRange{Int}}, n}(undef, chunks...)
+    for cidx in CartesianIndices(tuple(chunks...))
+        idxs[cidx.I...] = (cuts[cidx[1]]:cuts[cidx[1] + 1] - 1, )
+    end
+
+    return idxs
+end
+
 
 """
     sizeChunks2idxs(Asize, chunks)
