@@ -73,7 +73,7 @@ function sizeChunksCuts2indices(Asize, chunks, cuts::Tuple)
     return idxs
 end
 
-function sizeChunksCuts2indices(Asize, chunks, cuts::UnitRange)
+function sizeChunksCuts2indices(Asize, chunks, cuts::Vector{I}) where{I<:Integer}
     n = length(Asize)
     idxs = Array{NTuple{n,UnitRange{Int}}, n}(undef, chunks...)
     for cidx in CartesianIndices(tuple(chunks...))
@@ -129,7 +129,7 @@ function indice2rank(indice::NTuple{N, T}, rank2indices::Dict{Int, Tuple{Vararg{
     
     re = intersect(rks...)
 
-    isempty(re) && throw("No suitable rank found, please recheck!")
+    # isempty(re) && throw("No suitable rank found, please recheck!")
     length(re) > 1  && throw("Multi ranks found, please recheck!")
 
     return re[1]
@@ -148,8 +148,7 @@ function indice2ranks(indice::NTuple{N, T}, rank2indices::Dict{Int, Tuple{Vararg
     rks  = map(i -> findall(x -> !isempty(intersect(indice[i], x[i])), rank2indices), 1:N)
     
     re = intersect(rks...)
-
-    isempty(re) && throw("No suitable rank found, please recheck!")
+    # isempty(re) && throw("No suitable rank found, please recheck!")
 
     return re
 

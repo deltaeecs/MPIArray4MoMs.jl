@@ -24,8 +24,10 @@ setindex!(A, ComplexF64.(A.indices[1] * A.indices[2]'), :, :)
 @assert size(A) == (10, 10)
 @assert length(A) == 100
 
-x = mpiarray(ComplexF64, 10; partitation = (np, ), buffersize = 3)
 
+x = mpiarray(ComplexF64, np - 1; partitation = (np, ), buffersize = 3)
+x = mpiarray(ComplexF64, np + 1; partitation = (np, ), buffersize = 3)
+x = mpiarray(ComplexF64, 10; partitation = (np, ), buffersize = 3)
 fill!(x, 1)
 
 Av = view(A, 1, A.indices[2])
