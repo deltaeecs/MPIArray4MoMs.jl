@@ -32,14 +32,14 @@ mutable struct MPIArray{T, I, N}<:AbstractArray{T, N}
     rrank2localindices::Dict{Int, I}
 end
 
-MPIVector{T} = MPIArray{T, I, 1} where {T, I}
-MPIMatrix{T} = MPIArray{T, I, 2} where {T, I}
-SubMPIVector{T, SI, L}  =   SubArray{T, 1, MPIArray{T, I, MN}, SI, L} where {T, I, MN, SI, L}
-SubMPIMatrix{T, SI, L}  =   SubArray{T, 2, MPIArray{T, I, MN}, SI, L} where {T, I, MN, SI, L}
-SubMPIArray{T, N, SI, L}  = SubArray{T, N, MPIArray{T, I, MN}, SI, L} where {T, I, N, MN, SI, L}
-SubOrMPIVector{T}  = Union{MPIVector{T, I}, SubMPIVector{T, I, SI, L}} where {T, I, SI, L}
-SubOrMPIMatrix{T}  = Union{MPIMatrix{T, I}, SubMPIMatrix{T, I, SI, L}} where {T, I, SI, L}
-SubOrMPIArray{T, N}= Union{MPIArray{T, I, N}, SubMPIArray{T, I, N, SI, L}} where {T, I, N, SI, L}
+const MPIVector{T} = MPIArray{T, I, 1} where {T, I}
+const MPIMatrix{T} = MPIArray{T, I, 2} where {T, I}
+const SubMPIVector{T, SI, L}  =   SubArray{T, 1, MPIArray{T, I, MN}, SI, L} where {T, I, MN, SI, L}
+const SubMPIMatrix{T, SI, L}  =   SubArray{T, 2, MPIArray{T, I, MN}, SI, L} where {T, I, MN, SI, L}
+const SubMPIArray{T, N, SI, L}  = SubArray{T, N, MPIArray{T, I, MN}, SI, L} where {T, I, N, MN, SI, L}
+const SubOrMPIVector{T}  = Union{MPIVector{T}, SubMPIVector{T, SI, L}} where {T, SI, L}
+const SubOrMPIMatrix{T}  = Union{MPIMatrix{T}, SubMPIMatrix{T, SI, L}} where {T, SI, L}
+const SubOrMPIArray{T, N}= Union{MPIArray{T, I, N}, SubMPIArray{T, I, N, SI, L}} where {T, I, N, SI, L}
 
 Base.size(A::MPIArray) = A.size
 Base.size(A::MPIArray, i::Integer) = A.size[i]
