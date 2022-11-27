@@ -28,8 +28,6 @@ export  MPIArray,
         grank2ghostindices,
         remoterank2indices
         
-
-
 # Array
 include("mpiarray.jl")
 # things about index

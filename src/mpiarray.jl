@@ -27,9 +27,9 @@ mutable struct MPIArray{T, I, N}<:AbstractArray{T, N}
     size::NTuple{N,Int}
     rank2indices::Dict{Int, I}
     ghostdata::Array{T, N}
-    ghostindices::I
-    grank2ghostindices::Dict{Int, I}
-    rrank2localindices::Dict{Int, I}
+    ghostindices::IG where {IG}
+    grank2ghostindices::Dict{Int, IG} where {IG}
+    rrank2localindices::Dict{Int, IG} where {IG}
 end
 
 const MPIVector{T} = MPIArray{T, I, 1} where {T, I}

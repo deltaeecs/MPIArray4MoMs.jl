@@ -53,12 +53,12 @@ end
 @show t2.time/100000
 
 
-t2 = @timed for _ in 1:10000
+t3 = @timed for _ in 1:100
     gather(A)
     MPI.Barrier(x.comm)
 end
 
-@show t2.time/10000
+@show t3.time/100
 
 Alc = gather(A)
 
