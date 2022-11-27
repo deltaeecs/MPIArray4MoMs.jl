@@ -166,9 +166,9 @@ end
 
 TBW
 """
-function grank2ghostindices(ghostranks, ghostindices, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T2}
+function grank2ghostindices(ghostranks, ghostindices::Tuple{Vararg{T1, N}}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T1, T2}
 
-    grank2gindices = Dict{Int, Tuple{Vararg{T2, N}}}()
+    grank2gindices = Dict{Int, Tuple{Vararg{T1, N}}}()
     for grank in ghostranks
         grank == localrank && continue
         grank2gindices[grank] = Tuple([intersect(rank2indices[grank][i], ghostindices[i]) .- (first(ghostindices[i]) - 1) for i in 1:N])
