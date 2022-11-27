@@ -140,10 +140,10 @@ end
 """
     indice2ranks(indice::NTuple{N, T}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}) where{T<:Integer, N, T2}
         
-    Get the rank of indice::Ntuple{N, UnitRange} form rank2indices
+    Get the rank of indice::Ntuple{N, Indice} form rank2indices
 TBW
 """
-function indice2ranks(indice::NTuple{N, T}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}) where{T<:UnitRange, N, T2}
+function indice2ranks(indice::NTuple{N, T}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}) where{T, N, T2}
 
     rks  = map(i -> findall(x -> !isempty(intersect(indice[i], x[i])), rank2indices), 1:N)
     
