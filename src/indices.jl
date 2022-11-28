@@ -55,12 +55,20 @@ function slicedim2mpi(sz::Int, nc::Int)
     end
 end
 
-function sizeChunks2cuts(Asize, chunks::Tuple)
+function sizeChunks2cuts(Asize, chunks)
     map(slicedim2mpi, Asize, chunks)
 end
 
 function sizeChunks2cuts(Asize, chunks::Int)
     map(slicedim2mpi, Asize, (chunks, ))
+end
+
+function sizeChunks2cuts(Asize::Int, chunks)
+    map(slicedim2mpi, (Asize, ), chunks)
+end
+
+function sizeChunks2cuts(Asize::Int, chunks::Int)
+    map(slicedim2mpi, (Asize, ), (chunks, ))
 end
 
 function sizeChunksCuts2indices(Asize, chunks, cuts::Tuple)
