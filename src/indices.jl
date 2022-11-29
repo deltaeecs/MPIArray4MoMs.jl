@@ -207,6 +207,38 @@ end
 
 
 """
+    Base.searchsortedfirst(a::Vector{T}, x) where {T<:UnitRange}
+
+    找出已排序、无重叠的 Vector{UnitRange} 中的某个 UnitRange 的开头元素，在整个区间中的位置。
+TBW
+"""
+function Base.searchsortedfirst(a::Vector{T}, x) where {T<:UnitRange}
+    gid  = searchsortedfirst(a, x, by = first)
+    return sum(length, view(a, 1:(gid-1)); init = 0)
+end
+
+"""
+    grank2ghostindices(ghostranks, ghostindices::Tuple{Vararg{T1, N}}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T1<:Vector{Int}, T2}
+
+    get indices of ghost data in its hosting rank.
+
+TBW
+"""
+function grank2ghostindices(ghostranks, ghostindices::Tuple{Vararg{T1, N}}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T1<:Vector{UnitRange}, T2}
+
+    grank2gindices = Dict{Int, Tuple{Vararg{Vector{Int}, N}}}()
+    for grank in ghostranks
+        grank == localrank && continue
+        intersectIndice = map((rk2indice, gindice) -> reduce(vcat, map(g -> intersect(rk2indice, g), gindice)), rank2indices[grank], ghostindices)
+        grank2gindices[grank] = map((gidc, intersidc) -> searchsortedfirst(gidc, intersidc[1])
+                                        .+ (0:(length(intersidc) - 1)), ghostindices, intersectIndice)
+    end
+
+    return grank2gindices
+end
+
+
+"""
     remoterank2indices(remoteranks, indices::Tuple{T1, N}, rank2ghostindices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{T1<:UnitRange, N, T2}
 
     get remote rank and relative indices in data.
