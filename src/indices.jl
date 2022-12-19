@@ -270,32 +270,42 @@ function remoterank2indices(remoteranks, indices::Tuple{Vararg{T1, N}}, rank2gho
         rrank == localrank && continue
 
         intersectIndice = map(intersect, rank2ghostindices[rrank], indices)
-        grank2gindices[grank] = map((gidc, intersidc) -> searchsortedfirst(gidc, intersidc[1])
-                                        .+ (0:(length(intersidc) - 1)), ghostindices, intersectIndice)
-
-        rrank2indices[rrank] = Tuple([intersect(rank2ghostindices[rrank][i], indices[i]) .- (first(indices[i]) - 1) for i in 1:N])
+        grank2gindices[grank] = map((idc, intersidc) -> map(i -> searchsortedfirst(idc, i), intersidc), indices, intersectIndice)
     end
 
     return rrank2indices
 end
 
-
 """
-    remoterank2indices(remoteranks, indices::Tuple{T1, N}, rank2ghostindices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{T1<:UnitRange, N, T2}
+    get_rank2ghostindices(ghostranks, indices, ghostindices)
 
-    get remote rank and relative indices in data.
-
+    获取 ghostranks 到 ghostindices 的字典
 TBW
 """
-function remoterank2indices(remoteranks, indices::Tuple{Vararg{T1, N}}, rank2ghostindices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{T1<:Vector{Int}, N, T2}
+function get_rank2ghostindices(ghostranks, indices, ghostindices; comm = MPI.COMM_WORLD, rank = MPI.Comm_rank(comm), np = MPI.Comm_size(comm))
 
-    rrank2indices = Dict{Int, Tuple{Vararg{T2, N}}}()
-    for rrank in remoteranks
-        rrank == localrank && continue
-
-        intersectIndice = map(intersect, rank2ghostindices[rrank], indices)
-        grank2gindices[grank] = map((idc, intersidc) -> map(i -> searchsortedfirst(idc, i), intersidc), indices, intersectIndice)
+    # 传输本地ghostdata的大小数据
+    gsize = zeros(Int, length(ghostranks), length(indices))
+    reqs = MPI.Request[]
+    for (i, grk) in enumerate(ghostranks)
+        push!(reqs, MPI.Isend([length(gi) for gi in ghostindices], grk, rank*np+grk, comm))
+        push!(reqs, MPI.Irecv!(view(gsize, i, :), grk, grk*np + rank, comm))
     end
+    MPI.Waitall(MPI.RequestSet(reqs), MPI.Status)
 
-    return rrank2indices
+    # 分配用到的远程进程的 ghost indices
+    rank2ghostindices = Dict{Int, typeof(ghostindices)}()
+    for (i, grk) in enumerate(ghostranks)
+        rank2ghostindices[grk] = map(sz->zeros(Int, sz), Tuple(gsize[i, :]))
+    end
+    reqs = MPI.Request[]
+    for rk in ghostranks
+        rk == rank && continue
+        map(gi -> push!(reqs, MPI.Isend(gi, rk, rk*np + rank, comm)), ghostindices)
+        map(gi -> push!(reqs, MPI.Irecv!(gi, rk, rank*np + rk, comm)), rank2ghostindices[rk])
+    end
+    MPI.Waitall(MPI.RequestSet(reqs), MPI.Status)
+
+    return rank2ghostindices
+    
 end

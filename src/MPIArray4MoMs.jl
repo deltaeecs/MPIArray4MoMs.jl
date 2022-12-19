@@ -5,28 +5,16 @@ using Primes
 using OffsetArrays
 using LinearAlgebra
 
-export  MPIArray,
-        mpiarray,
-        MPIMatrix,
-        MPIVector,
-        SubMPIVector,
-        SubMPIMatrix,
-        SubMPIArray,
-        SubOrMPIVector,
-        SubOrMPIMatrix,
-        SubOrMPIArray,
-        sync!,
-        gather,
-        slicedim2mpi,
-        sizeChunks2cuts,
-        sizeChunks2idxs,
-        sizeChunksCuts2indices,
-        expandslice,
-        shrinkslice,
-        indice2rank,
-        indice2ranks,
-        grank2ghostindices,
-        remoterank2indices
+export  MPIArray, mpiarray,
+        MPIMatrix, MPIVector,
+        SubMPIVector, SubMPIMatrix, SubMPIArray, 
+        SubOrMPIVector, SubOrMPIMatrix, SubOrMPIArray,
+        sync!, gather,
+        slicedim2mpi, sizeChunks2cuts, sizeChunks2idxs, sizeChunksCuts2indices,
+        expandslice, shrinkslice,
+        indice2rank, indice2ranks,
+        grank2ghostindices, remoterank2indices,
+        get_rank2ghostindices
         
 # Array
 include("mpiarray.jl")
