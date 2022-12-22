@@ -8,15 +8,14 @@ function expandslice(idxs, bandwidth, bounds)
 end
 
 
-function slicedim2mpi(dims, pids)
+function slicedim2mpi(dims, nc::Int)
     dims = [dims...]
     chunks = ones(Int, length(dims))
-    np = length(pids)
-    f = sort!(collect(keys(factor(np))), rev=true)
+    f = sort!(collect(keys(factor(nc))), rev=true)
     k = 1
-    while np > 1
+    while nc > 1
         # repeatedly allocate largest factor to largest dim
-        if np % f[k] != 0
+        if nc % f[k] != 0
             k += 1
             if k > length(f)
                 break
@@ -30,9 +29,9 @@ function slicedim2mpi(dims, pids)
             dims[dno] = div(dims[dno], fac)
             chunks[dno] *= fac
         end
-        np = div(np, fac)
+        nc = div(nc, fac)
     end
-    return chunks
+    return Tuple(chunks)
 end
 
 
