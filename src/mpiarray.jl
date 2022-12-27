@@ -101,10 +101,8 @@ end
 
 TBW
 """
-function sync!(A::MPIArray)
+function sync!(A::MPIArray; comm = A.comm, rank = A.myrank, np = MPI.Comm_size(comm))
 
-    np = MPI.Comm_size(A.comm)
-    rank = A.myrank
     # begin sync
     req_all = MPI.Request[]
     begin
