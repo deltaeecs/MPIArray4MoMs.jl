@@ -17,6 +17,12 @@ end
 
 
 
+"""
+    ArrayTransfer(reqsIndices::NTuple{N, I}, a::MPIArray{T, IA, N}; comm = a.comm, rank = a.myrank, np = MPI.Comm_size(comm)) where {N, I, T, IA}
+
+    create buffer to sync the data in a with reqsIndices.
+TBW
+"""
 function ArrayTransfer(reqsIndices::NTuple{N, I}, a::MPIArray{T, IA, N}; comm = a.comm, rank = a.myrank, np = MPI.Comm_size(comm)) where {N, I, T, IA}
     
     # 收集所有进程需求的 indices
@@ -41,6 +47,12 @@ function ArrayTransfer(reqsIndices::NTuple{N, I}, a::MPIArray{T, IA, N}; comm = 
 
 end
 
+"""
+    sync!(t::ArrayTransfer; comm = t.parent.comm, rank = t.parent.myrank, np = MPI.Comm_size(comm))
+
+    sync data in t.
+TBW
+"""
 function sync!(t::ArrayTransfer; comm = t.parent.comm, rank = t.parent.myrank, np = MPI.Comm_size(comm))
 
     # parent mpi array
