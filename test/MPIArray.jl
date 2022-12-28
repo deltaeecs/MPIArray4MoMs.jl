@@ -73,7 +73,7 @@ display(xlc)
 
 A = mpiarray(ComplexF64, (10, 10); partitation = (2, np ÷ 2), buffersize = 0)
 reqsIndices = map((indice, ub) -> expandslice(indice, 3, 1:ub), A.rank2indices[rank], A.size)
-transfer = ArrayTransfer(reqsIndices, A)
+transfer = ArrayTransfer((collect(reqsIndices[1]), reqsIndices[2:end]...), A)
 
 
 fill!(A, rank)

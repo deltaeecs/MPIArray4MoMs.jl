@@ -9,6 +9,7 @@ export  MPIArray, mpiarray,
         MPIMatrix, MPIVector,
         SubMPIVector, SubMPIMatrix, SubMPIArray, 
         SubOrMPIVector, SubOrMPIMatrix, SubOrMPIArray,
+        ArrayChunk,
         ArrayTransfer,
         sync!, gather,
         slicedim2mpi, sizeChunks2cuts, sizeChunks2idxs, sizeChunksCuts2indices,
@@ -25,6 +26,8 @@ include("indices.jl")
 # LinearAlgebra functions
 include("linearalgebra.jl")
 
+# ArrayChunk
+include("arraychunk.jl")
 # Array Transfer
 include("transfer.jl")
 
