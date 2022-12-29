@@ -10,6 +10,7 @@ abstract type TRANSFER <: Any end
 """
 struct ArrayTransfer{T, N, I} <: TRANSFER
     parent::MPIArray{T, IA, N} where {IA}
+    reqsIndices::NTuple{N, Union{UnitRange{Int}, Vector{Int}}}
     reqsDatas::Dict{Int, ArrayChunk{T, N}}
     recv_rk2idcs::Dict{Int, I}
     send_rk2idcs::Dict{Int, I}
@@ -58,7 +59,7 @@ function ArrayTransfer(reqsIndices::NTuple{N, Union{UnitRange{Int}, Vector{Int}}
     send_ranks = indice2ranks(a.indices, rank2reqIndices)
     send_rank2indices = remoterank2indices(send_ranks, a.indices, rank2reqIndices)
 
-    ArrayTransfer{T, N, eltype(values(recv_rank2indices))}(a, reqsDatas, recv_rank2indices, send_rank2indices)
+    ArrayTransfer{T, N, eltype(values(recv_rank2indices))}(a, reqsIndices, reqsDatas, recv_rank2indices, send_rank2indices)
 
 end
 
