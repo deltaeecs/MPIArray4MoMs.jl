@@ -47,7 +47,7 @@ Base.length(A::MPIArray) = prod(A.size)
 Base.eltype(::MPIArray{T, I, N}) where {T, I, N} = T
 Base.getindex(A::MPIArray, I...) = getindex(A.dataOffset, I...)
 Base.setindex!(A::MPIArray, X, I...) = setindex!(A.dataOffset, X, I...)
-Base.fill!(A::MPIArray, args...)  = fill!(A.data, args...)
+Base.fill!(A::MPIArray, args...)  = begin fill!(A.data, args...); MPI.Barrier(A.comm); end
 
 
 mpiarray(T::DataType, Asize::NTuple{N, Int}; args...)  where {N}  = mpiarray(T, Asize...; args...)

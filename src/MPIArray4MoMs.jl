@@ -2,7 +2,7 @@ module MPIArray4MoMs
 
 using MPI
 using Primes
-using OffsetArrays
+using OffsetArrays, SparseArrays
 using LinearAlgebra
 
 export  MPIArray, mpiarray,
@@ -10,7 +10,7 @@ export  MPIArray, mpiarray,
         SubMPIVector, SubMPIMatrix, SubMPIArray, 
         SubOrMPIVector, SubOrMPIMatrix, SubOrMPIArray,
         ArrayChunk,
-        ArrayTransfer,
+        ArrayTransfer, PatternTransfer,
         sync!, gather,
         slicedim2mpi, sizeChunks2cuts, sizeChunks2idxs, sizeChunksCuts2indices,
         expandslice, shrinkslice,
@@ -30,5 +30,7 @@ include("linearalgebra.jl")
 include("arraychunk.jl")
 # Array Transfer
 include("transfer.jl")
+# PatternTransfer
+include("patterntransfer.jl")
 
 end # module MPIArray4MoM
