@@ -50,6 +50,6 @@ function setindex!(A::ArrayChunk{T, N}, x, idcs::Vararg{I, N}) where{T, N, I<:In
     ptrs    =   map(searchsorted, A.indices, idcs)
     any(isempty, ptrs) && begin @warn "$idcs not in indices of array!"; end
     idcslc  =   map(first, ptrs)
-    setindex!(A.data, x, idcs...)
+    setindex!(A.data, x, idcslc...)
     return nothing
 end

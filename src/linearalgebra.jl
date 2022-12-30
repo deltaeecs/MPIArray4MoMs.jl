@@ -5,6 +5,14 @@ function Base.:*(A::MPIMatrix, x::AbstractVector)
 
 end
 
+function LinearAlgebra.axpy!(a, X::MPIArray, Y::MPIArray)
+
+    X.indices != Y.indices && throw("This function only supports X and Y with same pattern")
+
+    axpy!(a, X.data, Y.data)
+
+end
+
 function LinearAlgebra.mul!(y, A::T, x::AbstractVector) where{T<:MPIMatrix}
     
     mul!(y, A.data, x)
