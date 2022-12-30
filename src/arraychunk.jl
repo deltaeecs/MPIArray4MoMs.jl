@@ -11,7 +11,7 @@ struct ArrayChunk{T, N} <:AbstractArray{T, N}
 end
 
 
-function ArrayChunk(T, indices::Vararg{Union{UnitRange{Int}, Vector{Int}}, N}) where {N}
+function ArrayChunk(T::DataType, indices::Vararg{Union{UnitRange{Int}, Vector{Int}}, N}) where {N}
 
     size =  map(length, indices)
     data =  zeros(T, size...)
@@ -19,7 +19,7 @@ function ArrayChunk(T, indices::Vararg{Union{UnitRange{Int}, Vector{Int}}, N}) w
     ArrayChunk{T, N}(data, indices)
 end
 
-ArrayChunk(data::Array{T, N}, indices) where {T,N} = ArrayChunk{T, N}(data, indices)
+ArrayChunk(data::Array{T, N}, indices...) where {T,N} = ArrayChunk{T, N}(data, indices)
 
 import Base:size, show, display, eltype, length, fill!, getindex, setindex!, sum
 
