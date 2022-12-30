@@ -19,6 +19,8 @@ function ArrayChunk(T, indices::Vararg{Union{UnitRange{Int}, Vector{Int}}, N}) w
     ArrayChunk{T, N}(data, indices)
 end
 
+ArrayChunk(data::Array{T, N}, indices) where {T,N} = ArrayChunk{T, N}(data, indices)
+
 import Base:size, show, display, eltype, length, fill!, getindex, setindex!, sum
 
 size(A::T) where{T<:ArrayChunk}  = size(A.data)
