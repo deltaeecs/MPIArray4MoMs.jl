@@ -41,6 +41,28 @@ Av = view(A, 1, A.indices[2])
 @test Av ⋅ x    == ((rank == 0) ? length(x) : nothing)
 @test  x ⋅ Av   == ((rank == 0) ? length(x) : nothing)
 
+y   = deepcopy(x)
+vy  = view(y, :)
+vx  = view(x, :)
+
+fill!(y, 1)
+axpy!(2, x, y)
+@test  all(y.data .== 3)
+
+fill!(y, 1)
+axpy!(2, x, vy)
+@test  all(y.data .== 3)
+
+fill!(y, 1)
+axpy!(2, vx, y)
+@test  all(y.data .== 3)
+
+fill!(y, 1)
+axpy!(2, vx, vy)
+@test  all(y.data .== 3)
+
+
+
 t1 = @timed for _ in 1:1000
     x ⋅ x
     MPI.Barrier(x.comm)
