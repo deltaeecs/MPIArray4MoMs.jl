@@ -44,36 +44,54 @@ end
 
 function LinearAlgebra.norm(x::T, p::Real=2; root = 0) where{T<:MPIArray}
 
-    re = MPI.Gather(norm(x.data, p), root, x.comm)
-    return MPI.Comm_rank(x.comm) == root ? norm(re, p) : nothing
+    if root == :all
+        return MPI.Allreduce(norm(x.data, p), (args...) -> norm([args...], p), x.comm)
+    else
+        return MPI.Reduce(norm(x.data, p), (args...) -> norm([args...], p), root, x.comm)
+    end
 
 end
 
 function LinearAlgebra.norm(x::T, p::Real=2; root = 0) where{T<:SubMPIArray}
-    xlocalidcs = map(intersect, X.indices, X.parent.indices)
-    re = MPI.Gather(norm(view(x.parent.dataOffset, xlocalidcs...), p), root, x.parent.comm)
-    return MPI.Comm_rank(x.parent.comm) == root ? norm(re, p) : nothing
+    xlocalidcs = map(intersect, x.indices, x.parent.indices)
 
+    if root == :all
+        return MPI.Allreduce(norm(x.parent.dataOffset[xlocalidcs...], p), (args...) -> norm([args...], p), x.parent.comm)
+    else
+        return MPI.Reduce(norm(x.parent.dataOffset[xlocalidcs...], p), (args...) -> norm([args...], p), root, x.parent.comm)
+    end
 end
 
 
 function LinearAlgebra.dot(x::T1, y::T2; root = 0) where{T1<:MPIVector, T2<:MPIVector}
 
-    return MPI.Reduce(dot(x.data, y.data), +, root, x.comm)
+    if root == :all
+        return MPI.Allreduce(dot(x.data, y.data), +,  x.comm)
+    else
+        return MPI.Reduce(dot(x.data, y.data), +, root, x.comm)
+    end
 
 end
 
 function LinearAlgebra.dot(x::T1, y::T2; root = 0) where{T1<:SubMPIVector, T2<:MPIVector}
 
     xlocalidcs = map(intersect, x.indices, x.parent.indices)
-    return MPI.Reduce(dot(view(x.parent.dataOffset, xlocalidcs...), y.data), +, root, y.comm)
+    if root == :all
+        return MPI.Allreduce(dot(view(x.parent.dataOffset, xlocalidcs...), y.data), +, y.comm)
+    else
+        return MPI.Reduce(dot(view(x.parent.dataOffset, xlocalidcs...), y.data), +, root, y.comm)
+    end
 
 end
 
 function LinearAlgebra.dot(x::T1, y::T2; root = 0) where{T1<:MPIVector, T2<:SubMPIVector}
 
     ylocalidcs = map(intersect, y.indices, y.parent.indices)
-    return MPI.Reduce(dot(x.data, view(y.parent.dataOffset, ylocalidcs...)), +, root, x.comm)
+    if root == :all
+        return MPI.Allreduce(dot(x.data, view(y.parent.dataOffset, ylocalidcs...)), +, x.comm)
+    else
+        return MPI.Reduce(dot(x.data, view(y.parent.dataOffset, ylocalidcs...)), +, root, x.comm)
+    end
 
 end
 
@@ -81,6 +99,10 @@ function LinearAlgebra.dot(x::T1, y::T2; root = 0) where{T1<:SubMPIVector, T2<:S
 
     xlocalidcs = map(intersect, x.indices, x.parent.indices)
     ylocalidcs = map(intersect, y.indices, y.parent.indices)
-    return MPI.Reduce(dot(view(x.parent.dataOffset, xlocalidcs...), view(y.parent.dataOffset, ylocalidcs...)), +, root, x.parent.comm)
+    if root == :all
+        return MPI.Allreduce(dot(view(x.parent.dataOffset, xlocalidcs...), view(y.parent.dataOffset, ylocalidcs...)), +, x.parent.comm)
+    else
+        return MPI.Reduce(dot(view(x.parent.dataOffset, xlocalidcs...), view(y.parent.dataOffset, ylocalidcs...)), +, root, x.parent.comm)
+    end
 
 end
