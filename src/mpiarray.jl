@@ -19,17 +19,17 @@ MPIArray used in MoM.
 `rrank2localindices`, the data host in this rank but used in other rank, here provides the remote rank and the indices used in `data`.
 """
 mutable struct MPIArray{T, I, N}<:AbstractArray{T, N}
-    data::SubOrArray{T, N}
-    indices::I
-    dataOffset::OffsetArray
-    comm::MPI.Comm
-    myrank::Int
-    size::NTuple{N,Int}
-    rank2indices::Dict{Int, I}
-    ghostdata::Array{T, N}
-    ghostindices::IG where {IG}
-    grank2ghostindices::Dict{Int, IG} where {IG}
-    rrank2localindices::Dict{Int, IG} where {IG}
+	data::SubOrArray{T, N}
+	indices::I
+	dataOffset::OffsetArray
+	comm::MPI.Comm
+	myrank::Int
+	size::NTuple{N,Int}
+	rank2indices::Dict{Int, I}
+	ghostdata::Array{T, N}
+	ghostindices::IG where {IG}
+	grank2ghostindices::Dict{Int, IG} where {IG}
+	rrank2localindices::Dict{Int, IG} where {IG}
 end
 
 const MPIVector{T, I} = MPIArray{T, I, 1} where {T, I}
@@ -47,99 +47,117 @@ Base.length(A::MPIArray) = prod(A.size)
 Base.eltype(::MPIArray{T, I, N}) where {T, I, N} = T
 Base.getindex(A::MPIArray, I...) = getindex(A.dataOffset, I...)
 Base.setindex!(A::MPIArray, X, I...) = setindex!(A.dataOffset, X, I...)
-Base.fill!(A::MPIArray, args...)  = begin fill!(A.data, args...); MPI.Barrier(A.comm); end
-Base.copyto!(A::MPIArray, B::MPIArray) = copyto!(A.data, B,data)
+Base.fill!(A::MPIArray, args...) = fill!(A.data, args...)
+
+Base.copyto!(A::MPIArray, B::MPIArray) = copyto!(A.data, B.data)
+
+function Base.copyto!(A::SubMPIArray, B::MPIArray)
+	Alocalidcs = map(intersect, A.indices, A.parent.indices)
+	copyto!(view(A.parent.dataOffset, Alocalidcs...), B.data)
+end
+
+function Base.copyto!(A::MPIArray, B::SubMPIArray)
+	Blocalidcs = map(intersect, B.indices, B.parent.indices)
+	copyto!(A.data, view(B.parent.dataOffset, Blocalidcs...))
+end
+
+function Base.copyto!(A::SubMPIArray, B::SubMPIArray)
+	Alocalidcs = map(intersect, A.indices, A.parent.indices)
+	Blocalidcs = map(intersect, B.indices, B.parent.indices)
+	copyto!(view(A.parent.dataOffset, Alocalidcs...), view(B.parent.dataOffset, Blocalidcs...))
+end
+
 
 mpiarray(T::DataType, Asize::NTuple{N, Int}; args...)  where {N}  = mpiarray(T, Asize...; args...)
 
 """
-    mpiarray(T::DataType, Asize::Vararg{Int, N}; buffersize = 0, comm = MPI.COMM_WORLD, partitation = (1, MPI.Comm_size(comm))) where {N}
+	mpiarray(T::DataType, Asize::Vararg{Int, N}; buffersize = 0, comm = MPI.COMM_WORLD, partitation = (1, MPI.Comm_size(comm))) where {N}
 
-    construct a mpi array with size `Asize` and distributed on MPI `comm` with 
+	construct a mpi array with size `Asize` and distributed on MPI `comm` with 
 TBW
 """
 function mpiarray(T::DataType, Asize::Vararg{Int, N}; buffersize = 0, comm = MPI.COMM_WORLD, 
-    partitation = Tuple(map(i -> begin (i < length(Asize)) ? 1 : MPI.Comm_size(comm) end, 1:N))) where {N}
+	partitation = Tuple(map(i -> begin (i < length(Asize)) ? 1 : MPI.Comm_size(comm) end, 1:N))) where {N}
 
-    rank = MPI.Comm_rank(comm)
-    np   = MPI.Comm_size(comm)
+	rank = MPI.Comm_rank(comm)
+	np   = MPI.Comm_size(comm)
 
-    allindices   = sizeChunks2idxs(Asize, partitation)
-    rank2indices = Dict(zip(0:(np-1), allindices))
-    indices = rank2indices[rank]
+	allindices   = sizeChunks2idxs(Asize, partitation)
+	rank2indices = Dict(zip(0:(np-1), allindices))
+	indices = rank2indices[rank]
 
-    rank2ghostindices = Dict{Int, eltype(values(rank2indices))}()
-    for (k, v) in rank2indices
-        rank2ghostindices[k] =  map((indice, ub) -> expandslice(indice, buffersize, 1:ub), v, Asize)
-    end
+	rank2ghostindices = Dict{Int, eltype(values(rank2indices))}()
+	for (k, v) in rank2indices
+		rank2ghostindices[k] =  map((indice, ub) -> expandslice(indice, buffersize, 1:ub), v, Asize)
+	end
 
-    ghostindices = map((indice, ub) -> expandslice(indice, buffersize, 1:ub), indices, Asize)
-    ghostdata = zeros(T, map(length, ghostindices)...)
+	ghostindices = map((indice, ub) -> expandslice(indice, buffersize, 1:ub), indices, Asize)
+	ghostdata = zeros(T, map(length, ghostindices)...)
 
-    ghostranks = indice2ranks(ghostindices, rank2indices)
-    grank2gindices = grank2ghostindices(ghostranks, ghostindices, rank2indices; localrank = rank)
+	ghostranks = indice2ranks(ghostindices, rank2indices)
+	grank2gindices = grank2ghostindices(ghostranks, ghostindices, rank2indices; localrank = rank)
 
-    remoteranks = indice2ranks(indices, rank2ghostindices)
-    rrank2indices = remoterank2indices(remoteranks, indices, rank2ghostindices; localrank = rank)
+	remoteranks = indice2ranks(indices, rank2ghostindices)
+	rrank2indices = remoterank2indices(remoteranks, indices, rank2ghostindices; localrank = rank)
 
-    dataInGhostData = Tuple(map((i, gi) -> i .- (first(gi) - 1), indices, ghostindices))
-    data = buffersize == 0 ? ghostdata : view(ghostdata, dataInGhostData...)
+	dataInGhostData = Tuple(map((i, gi) -> i .- (first(gi) - 1), indices, ghostindices))
+	data = buffersize == 0 ? ghostdata : view(ghostdata, dataInGhostData...)
 
-    A = MPIArray{T, typeof(indices), N}(data, indices, OffsetArray(data, indices), comm, rank, Asize, rank2indices, ghostdata, ghostindices, grank2gindices, rrank2indices)
+	A = MPIArray{T, typeof(indices), N}(data, indices, OffsetArray(data, indices), comm, rank, Asize, rank2indices, ghostdata, ghostindices, grank2gindices, rrank2indices)
 
-    sync!(A)
+	sync!(A)
 
-    MPI.Barrier(comm)
-    return A
+	MPI.Barrier(comm)
+	return A
 
 end
 
 """
-    sync!(A::MPIArray)
+	sync!(A::MPIArray)
 
-    Synchronize data in `A` between MPI ranks.
+	Synchronize data in `A` between MPI ranks.
 
 TBW
 """
 function sync!(A::MPIArray; comm = A.comm, rank = A.myrank, np = MPI.Comm_size(comm))
 
-    # begin sync
-    req_all = MPI.Request[]
-    begin
-        for (ghostrank, indices) in A.grank2ghostindices
-            req = MPI.Irecv!(view(A.ghostdata, indices...), ghostrank, ghostrank*np + rank, A.comm)
-            push!(req_all, req)
-        end
-        for (remoterank, indices) in A.rrank2localindices
-            req = MPI.Isend(A.data[indices...], remoterank, rank*np + remoterank, A.comm)
-            push!(req_all, req)
-        end
-    end
-    MPI.Waitall(MPI.RequestSet(req_all), MPI.Status)
+	# begin sync
+	req_all = MPI.Request[]
+	begin
+		for (ghostrank, indices) in A.grank2ghostindices
+			req = MPI.Irecv!(view(A.ghostdata, indices...), ghostrank, ghostrank*np + rank, A.comm)
+			push!(req_all, req)
+		end
+		for (remoterank, indices) in A.rrank2localindices
+			req = MPI.Isend(A.data[indices...], remoterank, rank*np + remoterank, A.comm)
+			push!(req_all, req)
+		end
+	end
+	MPI.Waitall(MPI.RequestSet(req_all), MPI.Status)
 
-    MPI.Barrier(A.comm)
+	MPI.Barrier(A.comm)
 
-    nothing
+	nothing
 
 end
 
 
 function gather(A::MPIArray; root = 0)
 
-    rank = MPI.Comm_rank(A.comm)
+	rank = MPI.Comm_rank(A.comm)
 
-    Alc = rank == root ? zeros(eltype(A), A.size) : nothing
+	Alc = rank == root ? zeros(eltype(A), A.size) : nothing
 
-    reqs = [MPI.Isend(Array(A.data), A.comm; dest = root)]
-    
-    if rank == root
-        append!(reqs, map((rk, indices) -> MPI.Irecv!(view(Alc, indices...), A.comm; source = rk), keys(A.rank2indices), values(A.rank2indices)))
-    else
-        nothing
-    end
+	reqs = [MPI.Isend(Array(A.data), A.comm; dest = root)]
+	
+	if rank == root
+		append!(reqs, map((rk, indices) -> MPI.Irecv!(view(Alc, indices...), A.comm; source = rk), keys(A.rank2indices), values(A.rank2indices)))
+	else
+		nothing
+	end
 
-    MPI.Waitall(MPI.RequestSet(reqs), MPI.Status)
+	MPI.Waitall(MPI.RequestSet(reqs), MPI.Status)
 
-    return Alc
+	return Alc
 
 end

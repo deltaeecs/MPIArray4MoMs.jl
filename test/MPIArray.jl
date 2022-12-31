@@ -46,7 +46,36 @@ np = MPI.Comm_size(comm)
     xlc = gather(x)
     @test (rank == 0) ? all(xlc .== 0.1) : isnothing(xlc)
 
+    A = mpiarray(ComplexF64, 10, 10; partitation = (1, np), buffersize = 10)
+    x = mpiarray(ComplexF64, 10; partitation = (np, ), buffersize = 10)
+    y = mpiarray(ComplexF64, 10; partitation = (np, ), buffersize = 10)
+    xv = view(x, :)
+    yv = view(y, :)
+
+    fill!(x, 0.2)
+    copyto!(y, x)
+    @test all(y.data .== 0.2)
+
+    fill!(y, 0)
+    copyto!(y, xv)
+    @test all(y.data .== 0.2)
+
+    fill!(y, 0)
+    copyto!(yv, x)
+    @test all(y.data .== 0.2)
+
+    fill!(y, 0)
+    copyto!(yv, xv)
+    @test all(y.data .== 0.2)
+
+    for i in axes(A, 2)
+        Aiv = view(A, i, :)
+        copyto!(Aiv, x)
+    end
+    @test all(A.data .== 0.2)
+
 end
+
 
 @testset "LinearAlgebra" begin
 
