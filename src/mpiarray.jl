@@ -50,23 +50,31 @@ Base.getindex(A::MPIArray, I...) = getindex(A.dataOffset, I...)
 Base.setindex!(A::MPIArray, X, I...) = setindex!(A.dataOffset, X, I...)
 Base.fill!(A::MPIArray, args...) = fill!(A.data, args...)
 
-Base.copyto!(A::MPIArray, B::MPIArray) = copyto!(A.data, B.data)
+function getdata(A::MPIArray)
+	A.data
+end
 
-function Base.copyto!(A::SubMPIArray, B::MPIArray)
+function getdata(A::SubMPIArray)
 	Alocalidcs = map(intersect, A.indices, A.parent.indices)
-	copyto!(view(A.parent.dataOffset, Alocalidcs...), B.data)
+	view(A.parent.dataOffset, Alocalidcs...)
 end
 
-function Base.copyto!(A::MPIArray, B::SubMPIArray)
-	Blocalidcs = map(intersect, B.indices, B.parent.indices)
-	copyto!(A.data, view(B.parent.dataOffset, Blocalidcs...))
+function getcomm(A::MPIArray)
+	A.comm
 end
 
-function Base.copyto!(A::SubMPIArray, B::SubMPIArray)
-	Alocalidcs = map(intersect, A.indices, A.parent.indices)
-	Blocalidcs = map(intersect, B.indices, B.parent.indices)
-	copyto!(view(A.parent.dataOffset, Alocalidcs...), view(B.parent.dataOffset, Blocalidcs...))
+function getcomm(A::SubMPIArray)
+	A.parent.comm
 end
+
+function Base.copyto!(A::TA, B::TB) where{TA<:SubOrMPIArray, TB<:SubOrMPIArray}
+	copyto!(getdata(A), getdata(B))
+end
+
+Base.broadcast(f, A::TA, B::TB) where{TA<:SubOrMPIArray, TB<:SubOrMPIArray} = 
+	broadcast(f, getdata(A), getdata(B))
+Base.broadcast!(f, dest::Td, A::TA, B::TB) where{Td<:SubOrMPIArray, TA<:SubOrMPIArray, TB<:SubOrMPIArray} = 
+	broadcast!(f, getdata(dest), getdata(A), getdata(B))
 
 
 mpiarray(T::DataType, Asize::NTuple{N, Int}; args...)  where {N}  = mpiarray(T, Asize...; args...)
