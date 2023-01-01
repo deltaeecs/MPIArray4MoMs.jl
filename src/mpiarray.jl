@@ -45,6 +45,7 @@ Base.size(A::MPIArray) = A.size
 Base.size(A::MPIArray, i::Integer) = A.size[i]
 Base.length(A::MPIArray) = prod(A.size)
 Base.eltype(::MPIArray{T, I, N}) where {T, I, N} = T
+Base.similar(A::MPIArray) = deepcopy(A)
 Base.getindex(A::MPIArray, I...) = getindex(A.dataOffset, I...)
 Base.setindex!(A::MPIArray, X, I...) = setindex!(A.dataOffset, X, I...)
 Base.fill!(A::MPIArray, args...) = fill!(A.data, args...)
