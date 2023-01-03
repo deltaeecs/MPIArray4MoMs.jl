@@ -11,10 +11,12 @@ end
 
 function LinearAlgebra.mul!(y, A::T, x::AbstractVector) where{T<:SubOrMPIArray}
     mul!(y, getdata(A), x)
+    y
 end
 
 function LinearAlgebra.mul!(y::Ty, A::TA, x::AbstractVector) where{Ty<:SubOrMPIArray, TA<:SubOrMPIArray}
     mul!(getdata(y), getdata(A), x)
+    y
 end
 
 
@@ -41,4 +43,5 @@ end
 
 function LinearAlgebra.rmul!(A::T1, r::Number) where{T1<:SubOrMPIArray}
     rmul!(getdata(A), r)
+    A
 end
