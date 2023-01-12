@@ -10,7 +10,7 @@
 """
 struct PatternTransfer{T, I} <: TRANSFER
     parent::MPIArray{T, IA, 3} where {IA}
-    reqsIndices::NTuple{3, Union{UnitRange{Int}, Vector{Int}}}
+    reqsIndices::I
     reqsDatas::Dict{Int, SparseMatrixCSC{T, Int}}
     recv_rk2idcs::Dict{Int, I}
     send_rk2idcs::Dict{Int, I}
