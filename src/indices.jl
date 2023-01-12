@@ -335,7 +335,7 @@ function remoterank2indices(remoteranks, indices::Tuple{Vararg{T1, N}}, rank2gho
     rrank2indices = Dict{Int, Tuple{Vararg{UnitRange{Int}, N}}}()
     for rrank in remoteranks
         rrank == localrank && continue
-        intersectIndice = map((rk2indice, rindice) -> reduce(vcat, map(r -> intersect(rk2indice, r), rindice)), rank2ghostindices[rrank], indices)
+        intersectIndice = map(intersect, rank2ghostindices[rrank], indices)
         rrank2indices[rrank] = map((gidc, intersidc) -> searchsortedfirst(gidc, intersidc[1])
                                         .+ (0:(length(intersidc) - 1)), indices, intersectIndice)
     end
