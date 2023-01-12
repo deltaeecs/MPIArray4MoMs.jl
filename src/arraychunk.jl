@@ -19,7 +19,10 @@ function ArrayChunk(T::DataType, indices::Vararg{Union{UnitRange{Int}, Vector{In
     ArrayChunk{T, N}(data, indices)
 end
 
-ArrayChunk(data::Array{T, N}, indices...) where {T,N} = ArrayChunk{T, N}(data, indices)
+function ArrayChunk(data::Array{T, N}, indices...) where {T,N}
+    any(i -> size(data, i)!= length(indices[i]), 1:N) && throw("Demension miss match!")
+    ArrayChunk{T, N}(data, indices)
+end
 
 import Base:size, show, display, eltype, length, fill!, getindex, setindex!, sum
 
