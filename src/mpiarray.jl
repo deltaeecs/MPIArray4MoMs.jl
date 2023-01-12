@@ -18,34 +18,35 @@ MPIArray used in MoM.
 
 `rrank2localindices`, the data host in this rank but used in other rank, here provides the remote rank and the indices used in `data`.
 """
-mutable struct MPIArray{T, I, N}<:AbstractArray{T, N}
-	data::SubArray{T, N, Array{T, N}, NTuple{N, UnitRange{Int}}}
+mutable struct MPIArray{T, I, N, DT, IG}<:AbstractArray{T, N}
+	data::DT
 	indices::I
-	dataOffset::OffsetArray
+	dataOffset::OffsetArray{T, N, DT}
 	comm::MPI.Comm
 	myrank::Int
 	size::NTuple{N,Int}
 	rank2indices::Dict{Int, I}
 	ghostdata::Array{T, N}
-	ghostindices::IG where {IG}
-	grank2ghostindices::Dict{Int, IG} where {IG}
-	rrank2localindices::Dict{Int, IG} where {IG}
+	ghostindices::IG
+	grank2ghostindices::Dict{Int, IG}
+	rrank2localindices::Dict{Int, IG}
 end
 
-const MPIVector{T, I} = MPIArray{T, I, 1} where {T, I}
-const MPIMatrix{T, I} = MPIArray{T, I, 2} where {T, I}
-const SubMPIVector{T, I, SI, L}  =   SubArray{T, 1, MPIArray{T, I, MN}, SI, L} where {T, I, MN, SI, L}
-const SubMPIMatrix{T, I, SI, L}  =   SubArray{T, 2, MPIArray{T, I, MN}, SI, L} where {T, I, MN, SI, L}
-const SubMPIArray{T, I, N, SI, L}  = SubArray{T, N, MPIArray{T, I, MN}, SI, L} where {T, I, N, MN, SI, L}
-const SubOrMPIVector{T}  = Union{MPIVector{T}, SubMPIVector{T, SI, L}} where {T, SI, L}
-const SubOrMPIMatrix{T}  = Union{MPIMatrix{T}, SubMPIMatrix{T, SI, L}} where {T, SI, L}
-const SubOrMPIArray{T, I, N}= Union{MPIArray{T, I, N}, SubMPIArray{T, I, N, SI, L}} where {T, I, N, SI, L}
+const MPIVector{T, I, DT, IG} = MPIArray{T, I, 1, DT, IG} where {T, I, DT, IG}
+const MPIMatrix{T, I, DT, IG} = MPIArray{T, I, 2, DT, IG} where {T, I, DT, IG}
+const SubMPIVector{T, I, DT, IG, SI, L}  =   SubArray{T, 1, MPIArray{T, I, MN, DT, IG}, SI, L} where {T, I, MN, DT, IG, SI, L}
+const SubMPIMatrix{T, I, DT, IG, SI, L}  =   SubArray{T, 2, MPIArray{T, I, MN, DT, IG}, SI, L} where {T, I, MN, DT, IG, SI, L}
+const SubMPIArray{T, I, N, DT, IG, SI, L}  = SubArray{T, N, MPIArray{T, I, MN, DT, IG}, SI, L} where {T, I, N, MN, DT, IG, SI, L}
+const SubOrMPIVector{T, I, DT, IG}  = Union{MPIVector{T, I, DT, IG}, SubMPIVector{T, I, DT, IG, SI, L}} where {T, I, DT, IG, SI, L}
+const SubOrMPIMatrix{T, I, DT, IG}  = Union{MPIMatrix{T, I, DT, IG}, SubMPIMatrix{T, I, DT, IG, SI, L}} where {T, I, DT, IG, SI, L}
+const SubOrMPIArray{T, I, N, DT, IG}= Union{MPIArray{T, I, N, DT, IG}, SubMPIArray{T, I, N, DT, IG, SI, L}} where {T, I, N, DT, IG, SI, L}
 
 Base.size(A::MPIArray) = A.size
 Base.size(A::MPIArray, i::Integer) = A.size[i]
 Base.length(A::MPIArray) = prod(A.size)
 Base.eltype(::MPIArray{T, I, N}) where {T, I, N} = T
 Base.getindex(A::MPIArray, I...) = getindex(A.dataOffset, I...)
+Base.getindex(A::MPIArray, I::Int) = getindex(A.dataOffset, I)
 Base.setindex!(A::MPIArray, X, I...) = setindex!(A.dataOffset, X, I...)
 function Base.fill!(A::MPIArray, args...)
 	fill!(A.data, args...)
@@ -120,7 +121,7 @@ function mpiarray(T::DataType, Asize::Vararg{Int, N}; buffersize = 0, comm = MPI
 	dataInGhostData = Tuple(map((i, gi) -> i .- (first(gi) - 1), indices, ghostindices))
 	data = view(ghostdata, dataInGhostData...)
 
-	A = MPIArray{T, typeof(indices), N}(data, indices, OffsetArray(data, indices), comm, rank, Asize, rank2indices, ghostdata, ghostindices, grank2gindices, rrank2indices)
+	A = MPIArray{T, typeof(indices), N, typeof(data), typeof(ghostindices)}(data, indices, OffsetArray(data, indices), comm, rank, Asize, rank2indices, ghostdata, ghostindices, grank2gindices, rrank2indices)
 
 	sync!(A)
 
