@@ -225,7 +225,7 @@ TBW
 """
 function grank2ghostindices(ghostranks, ghostindices::Tuple{Vararg{T1, N}}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T1<:Vector{UnitRange}, T2}
 
-    grank2gindices = Dict{Int, Tuple{Vararg{Vector{Int}, N}}}()
+    grank2gindices = Dict{Int, Tuple{Vararg{T2, N}}}()
     for grank in ghostranks
         grank == localrank && continue
         intersectIndice = map((rk2indice, gindice) -> reduce(vcat, map(g -> intersect(rk2indice, g), gindice)), rank2indices[grank], ghostindices)
@@ -318,6 +318,26 @@ function remoterank2indices(remoteranks, indices, rank2ghostindices::Dict{Int, T
         rrank == localrank && continue
         intersectIndice = map(intersect, rank2ghostindices[rrank], indices)
         rrank2indices[rrank] = map(intersectInIdc, indices, intersectIndice)
+    end
+
+    return rrank2indices
+end
+
+"""
+remoterank2indices(remoteranks, indices::Tuple{Vararg{T1, N}}, rank2ghostindices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T1<:Vector{Int}, T2}
+
+    get indices of ghost data in its hosting rank.
+
+TBW
+"""
+function remoterank2indices(remoteranks, indices::Tuple{Vararg{T1, N}}, rank2ghostindices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T1<:UnitRange, T2}
+
+    rrank2indices = Dict{Int, Tuple{Vararg{UnitRange{Int}, N}}}()
+    for rrank in remoteranks
+        rrank == localrank && continue
+        intersectIndice = map((rk2indice, rindice) -> reduce(vcat, map(r -> intersect(rk2indice, r), rindice)), rank2ghostindices[rrank], indices)
+        rrank2indices[rrank] = map((gidc, intersidc) -> searchsortedfirst(gidc, intersidc[1])
+                                        .+ (0:(length(intersidc) - 1)), indices, intersectIndice)
     end
 
     return rrank2indices

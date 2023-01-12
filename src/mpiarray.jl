@@ -28,8 +28,8 @@ mutable struct MPIArray{T, I, N, DT, IG}<:AbstractArray{T, N}
 	rank2indices::Dict{Int, I}
 	ghostdata::Array{T, N}
 	ghostindices::IG
-	grank2ghostindices::Dict{Int, IG}
-	rrank2localindices::Dict{Int, IG}
+	grank2ghostindices::Dict{Int, I}
+	rrank2localindices::Dict{Int, I}
 end
 
 const MPIVector{T, I, DT, IG} = MPIArray{T, I, 1, DT, IG} where {T, I, DT, IG}
@@ -46,7 +46,6 @@ Base.size(A::MPIArray, i::Integer) = A.size[i]
 Base.length(A::MPIArray) = prod(A.size)
 Base.eltype(::MPIArray{T, I, N}) where {T, I, N} = T
 Base.getindex(A::MPIArray, I...) = getindex(A.dataOffset, I...)
-Base.getindex(A::MPIArray, I::Int) = getindex(A.dataOffset, I)
 Base.setindex!(A::MPIArray, X, I...) = setindex!(A.dataOffset, X, I...)
 function Base.fill!(A::MPIArray, args...)
 	fill!(A.data, args...)
