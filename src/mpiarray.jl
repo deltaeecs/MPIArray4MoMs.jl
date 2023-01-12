@@ -19,7 +19,7 @@ MPIArray used in MoM.
 `rrank2localindices`, the data host in this rank but used in other rank, here provides the remote rank and the indices used in `data`.
 """
 mutable struct MPIArray{T, I, N}<:AbstractArray{T, N}
-	data::SubOrArray{T, N}
+	data::SubArray{T, N, Array{T, N}, NTuple{N, UnitRange{Int}}}
 	indices::I
 	dataOffset::OffsetArray
 	comm::MPI.Comm
@@ -118,7 +118,7 @@ function mpiarray(T::DataType, Asize::Vararg{Int, N}; buffersize = 0, comm = MPI
 	rrank2indices = remoterank2indices(remoteranks, indices, rank2ghostindices; localrank = rank)
 
 	dataInGhostData = Tuple(map((i, gi) -> i .- (first(gi) - 1), indices, ghostindices))
-	data = buffersize == 0 ? ghostdata : view(ghostdata, dataInGhostData...)
+	data = view(ghostdata, dataInGhostData...)
 
 	A = MPIArray{T, typeof(indices), N}(data, indices, OffsetArray(data, indices), comm, rank, Asize, rank2indices, ghostdata, ghostindices, grank2gindices, rrank2indices)
 
