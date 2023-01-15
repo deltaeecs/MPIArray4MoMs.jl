@@ -19,6 +19,16 @@ function LinearAlgebra.mul!(y::Ty, A::TA, x::AbstractVector) where{Ty<:SubOrMPIA
     y
 end
 
+function LinearAlgebra.mul!(y, A::T, x::AbstractVector, α::Number, β::Number) where{T<:SubOrMPIArray}
+    mul!(y, getdata(A), x, α, β)
+    y
+end
+
+function LinearAlgebra.mul!(y::Ty, A::TA, x::AbstractVector, α::Number, β::Number) where{Ty<:SubOrMPIArray, TA<:SubOrMPIArray}
+    mul!(getdata(y), getdata(A), x, α, β)
+    y
+end
+
 
 function LinearAlgebra.norm(x::T, p::Real=2; root = -1) where{T<:SubOrMPIArray}
 
