@@ -52,6 +52,13 @@ np = MPI.Comm_size(comm)
 	xv = view(x, :)
 	yv = view(y, :)
 
+	fill!(A, 1)
+	@test sum(A) == 100
+	@test sum(view(A, :, 2)) == 10
+	fill!(xv, 1)
+	@test sum(xv) == 10
+
+
 	xf, yf  = 0.2, 0.1
 	fill!(x, xf)
 	fill!(y, yf)

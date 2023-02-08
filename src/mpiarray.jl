@@ -51,10 +51,24 @@ function Base.fill!(A::MPIArray, args...)
 	fill!(A.data, args...)
 	A
 end
+function Base.fill!(A::SubMPIArray, args...)
+	fill!(getdata(A), args...)
+	A
+end
 function Base.similar(A::MPIArray)
 	B = deepcopy(A)
 	fill!(B, 0)
 	B
+end
+
+function Base.sum(x::T; root = -1) where{T<:SubOrMPIArray}
+
+    if root == -1
+        return MPI.Allreduce(sum(getdata(x)), +, getcomm(x))
+    else
+        return MPI.Reduce(sum(getdata(x)), +, root, getcomm(x))
+    end
+
 end
 
 function getdata(A::MPIArray)
