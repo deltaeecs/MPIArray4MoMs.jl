@@ -29,7 +29,7 @@ mutable struct MPIArray{T, I, N, DT, IG}<:AbstractArray{T, N}
 	ghostdata::Array{T, N}
 	ghostindices::IG
 	grank2ghostindices::Dict{Int, I}
-	rrank2localindices::Dict{Int, I}
+	rrank2localindices::Dict{Int, IG}
 end
 
 const MPIVector{T, I, DT, IG} = MPIArray{T, I, 1, DT, IG} where {T, I, DT, IG}
