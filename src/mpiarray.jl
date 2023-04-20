@@ -104,14 +104,12 @@ mpiarray(T::DataType, Asize::NTuple{N, Int}; args...)  where {N}  = mpiarray(T, 
 """
 	mpiarray(T::DataType, Asize::Vararg{Int, N}; buffersize = 0, comm = MPI.COMM_WORLD, partitation = (1, MPI.Comm_size(comm))) where {N}
 
-	construct a mpi array with size `Asize` and distributed on MPI `comm` with 
+	construct a mpi array with size `Asize` and distributed on MPI `comm` with partitation.
 TBW
 """
 function mpiarray(T::DataType, Asize::Vararg{Int, N}; buffersize = 0, comm = MPI.COMM_WORLD, 
-	partitation = Tuple(map(i -> begin (i < length(Asize)) ? 1 : MPI.Comm_size(comm) end, 1:N))) where {N}
-
-	rank = MPI.Comm_rank(comm)
-	np   = MPI.Comm_size(comm)
+	partitation = Tuple(map(i -> begin (i < length(Asize)) ? 1 : MPI.Comm_size(comm) end, 1:N)), 
+	rank = MPI.Comm_rank(comm), np = MPI.Comm_size(comm)) where {N}
 
 	allindices   = sizeChunks2idxs(Asize, partitation)
 	rank2indices = Dict(zip(0:(np-1), allindices))
