@@ -102,16 +102,16 @@ Base.broadcast!(f, dest::Td, A::TA, B::TB) where{Td<:SubOrMPIArray, TA<:SubOrMPI
 mpiarray(T::DataType, Asize::NTuple{N, Int}; args...)  where {N}  = mpiarray(T, Asize...; args...)
 
 """
-	mpiarray(T::DataType, Asize::Vararg{Int, N}; buffersize = 0, comm = MPI.COMM_WORLD, partitation = (1, MPI.Comm_size(comm))) where {N}
+	mpiarray(T::DataType, Asize::Vararg{Int, N}; buffersize = 0, comm = MPI.COMM_WORLD, partition = (1, MPI.Comm_size(comm))) where {N}
 
-	construct a mpi array with size `Asize` and distributed on MPI `comm` with partitation.
+	construct a mpi array with size `Asize` and distributed on MPI `comm` with partition.
 TBW
 """
 function mpiarray(T::DataType, Asize::Vararg{Int, N}; buffersize = 0, comm = MPI.COMM_WORLD, 
-	partitation = Tuple(map(i -> begin (i < length(Asize)) ? 1 : MPI.Comm_size(comm) end, 1:N)), 
+	partition = Tuple(map(i -> begin (i < length(Asize)) ? 1 : MPI.Comm_size(comm) end, 1:N)), 
 	rank = MPI.Comm_rank(comm), np = MPI.Comm_size(comm)) where {N}
 
-	allindices   = sizeChunks2idxs(Asize, partitation)
+	allindices   = sizeChunks2idxs(Asize, partition)
 	rank2indices = Dict(zip(0:(np-1), allindices))
 	indices = rank2indices[rank]
 

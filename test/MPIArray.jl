@@ -15,14 +15,14 @@ root = 0
 np = MPI.Comm_size(comm)
 
 @testset "MPIArray basics" begin
-	A = mpiarray(ComplexF64, (10, 10); partitation = (1, np), buffersize = 3)
+	A = mpiarray(ComplexF64, (10, 10); partition = (1, np), buffersize = 3)
 	@test true
-	A = mpiarray(ComplexF64, 10, 10; partitation = (1, np), buffersize = 10)
+	A = mpiarray(ComplexF64, 10, 10; partition = (1, np), buffersize = 10)
 	@test true
 	@test size(A) == (10, 10)
 	@test length(A) == 10*10
 
-	A = mpiarray(ComplexF64, 10, 10, 10; partitation = (2, 1, np÷2), buffersize = 3)
+	A = mpiarray(ComplexF64, 10, 10, 10; partition = (2, 1, np÷2), buffersize = 3)
 
 	fill!(A, rank)
 	sync!(A)
@@ -37,18 +37,18 @@ np = MPI.Comm_size(comm)
 	end
 
 
-	x = mpiarray(ComplexF64, np - 1; partitation = (np, ), buffersize = 3)
+	x = mpiarray(ComplexF64, np - 1; partition = (np, ), buffersize = 3)
 	@test true
-	x = mpiarray(ComplexF64, np + 1; partitation = (np, ), buffersize = 3)
+	x = mpiarray(ComplexF64, np + 1; partition = (np, ), buffersize = 3)
 	@test true
 
 	fill!(x, 0.1)
 	xlc = gather(x)
 	@test (rank == 0) ? all(xlc .== 0.1) : isnothing(xlc)
 
-	A = mpiarray(ComplexF64, 10, 10; partitation = (1, np), buffersize = 10)
-	x = mpiarray(ComplexF64, 10; partitation = (np, ), buffersize = 1)
-	y = mpiarray(ComplexF64, 10; partitation = (np, ), buffersize = 2)
+	A = mpiarray(ComplexF64, 10, 10; partition = (1, np), buffersize = 10)
+	x = mpiarray(ComplexF64, 10; partition = (np, ), buffersize = 1)
+	y = mpiarray(ComplexF64, 10; partition = (np, ), buffersize = 2)
 	xv = view(x, :)
 	yv = view(y, :)
 
@@ -107,8 +107,8 @@ end
 
 @testset "LinearAlgebra" begin
 
-	A = mpiarray(ComplexF64, 10, 10; partitation = (1, np), buffersize = 10)
-	x = mpiarray(ComplexF64, 10; partitation = (np, ), buffersize = 10)
+	A = mpiarray(ComplexF64, 10, 10; partition = (1, np), buffersize = 10)
+	x = mpiarray(ComplexF64, 10; partition = (np, ), buffersize = 10)
 	fill!(x, 1)
 	fill!(A, 1)
 
@@ -132,7 +132,7 @@ end
 		@test norm( x; root = root)  == ((rank == root) ? sqrt(length( x)) : nothing)
 		@test norm(Av; root = root)  == ((rank == root) ? sqrt(size(A, 2)) : nothing)
 
-		B = mpiarray(ComplexF64, (10, 10); partitation = (2, np ÷ 2), buffersize = 3)
+		B = mpiarray(ComplexF64, (10, 10); partition = (2, np ÷ 2), buffersize = 3)
 		fill!(B, 1)
 		Bv = view(B, 1, B.indices[2])
 
@@ -206,7 +206,7 @@ end
 @testset "Transfer" begin
 	
 	@testset "ArrayTransfer" begin
-		A = mpiarray(ComplexF64, (10, 10); partitation = (2, np ÷ 2), buffersize = 0)
+		A = mpiarray(ComplexF64, (10, 10); partition = (2, np ÷ 2), buffersize = 0)
 		reqsIndices = map((indice, ub) -> expandslice(indice, 3, 1:ub), A.rank2indices[rank], A.size)
 		transfer = ArrayTransfer((collect(reqsIndices[1]), reqsIndices[2:end]...), A)
 		@test true
@@ -225,7 +225,7 @@ end
 	end
 
 	@testset "PatternTransfer" begin
-		A = mpiarray(ComplexF64, (10, 10, 10); partitation = (2, 2, np ÷ 4), buffersize = 0)
+		A = mpiarray(ComplexF64, (10, 10, 10); partition = (2, 2, np ÷ 4), buffersize = 0)
 		reqsIndices = map((indice, ub) -> expandslice(indice, 3, 1:ub), A.rank2indices[rank], A.size)
 
 		transfer = PatternTransfer((collect(reqsIndices[1]), reqsIndices[2:end]...), A)
