@@ -1,7 +1,7 @@
 name = "MPIArray4MoMs"
 uuid = "b7f3fe35-ff1f-4dc5-b861-bd211d5a9a4b"
 authors = ["deltaeecs <1225385871@qq.com> and contributors"]
-version = "0.1.0"
+version = "0.0.1"
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
