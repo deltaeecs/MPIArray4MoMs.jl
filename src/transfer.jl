@@ -1,12 +1,16 @@
 abstract type TRANSFER <: Any end
 
 """
-    Independt data transfer for MPIArray.
-    parent::MPIArray the parent array to transfer
-    send_rk2idcs::Dict{Int, I} a Dict that restore the rank and data indices to transfer.
-    recv_rk2ghidcs::Dict{Int, I}
-    ghsize::NTuple{N, Int}
+ArrayTransfer{T, N, I} <: TRANSFER
 
+独立于 `MPIArray` 的数据传输器。
+```
+parent::MPIArray{T, IA, N} where {IA}                       待传输的 Pattern `MPIArray`。
+reqsIndices::NTuple{N, Union{UnitRange{Int}, Vector{Int}}}  需求的索引
+reqsDatas::Dict{Int, ArrayChunk{T, N}}                      用 ArrayChunk 保存 pole 和 θϕ 方向的数据，Dict建保存 cube 数据。
+recv_rk2idcs::Dict{Int, I}                                  本 `rank` 接收的 `rank` 以及在本地数据中的索引。
+send_rk2idcs::Dict{Int, I}                                  本 `rank` 发送的 `rank` 以及在本地数据中的索引。
+```
 """
 struct ArrayTransfer{T, N, I} <: TRANSFER
     parent::MPIArray{T, IA, N} where {IA}
@@ -36,8 +40,7 @@ end
 """
     ArrayTransfer(reqsIndices::NTuple{N, I}, a::MPIArray{T, IA, N}; comm = a.comm, rank = a.myrank, np = MPI.Comm_size(comm)) where {N, I, T, IA}
 
-    create buffer to sync the data in a with reqsIndices.
-TBW
+create buffer to sync the data in a with `reqsIndices`.
 """
 function ArrayTransfer(reqsIndices::NTuple{N, Union{UnitRange{Int}, Vector{Int}}}, a::MPIArray{T, IA, N}; comm = a.comm, rank = a.myrank, np = MPI.Comm_size(comm)) where {N, T, IA}
     
@@ -66,8 +69,7 @@ end
 """
     sync!(t::ArrayTransfer; comm = t.parent.comm, rank = t.parent.myrank, np = MPI.Comm_size(comm))
 
-    sync data in t.
-TBW
+sync data in t.
 """
 function sync!(t::ArrayTransfer; comm = t.parent.comm, rank = t.parent.myrank, np = MPI.Comm_size(comm))
 

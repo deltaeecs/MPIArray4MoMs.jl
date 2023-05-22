@@ -5,6 +5,6 @@ using Test
 @testset "MPIArray4MoMs.jl" begin
     
     include("mpiexec.jl")
-    run_mpi_driver(procs=8, file="MPIArray.jl")
+    run_mpi_driver(procs=4, file="MPIArray.jl")
 
 end

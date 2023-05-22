@@ -2,21 +2,23 @@
 SubOrArray{T, N} = Union{Array{T, N}, SubArray{T,N,P,I,L}} where {T, N, P, I, L} 
 
 """
+	MPIArray{T, I, N, DT, IG}<:AbstractArray{T, N}
+
 MPIArray used in MoM.
 
-`data`, the data stored in local rank;
-
-`indices`, indice of `data` in global Array;
-
-`size`, global size of data;
-
-`rank2indices`, a dict record all MPI ranks to their datas global indices,
-
-`ghostdata`, the data stored or used in this rank,
-
-`grank2ghostindices`, the data used but not stored in this rank, here provides the host rank and its indices in `ghostdata`,
-
-`rrank2localindices`, the data host in this rank but used in other rank, here provides the remote rank and the indices used in `data`.
+```
+data::DT				the data stored in local rank;
+indices::I				indice of `data` in global Array
+dataOffset::OffsetArray{T, N, DT}	the OffsetArray of data stored in local rank
+comm::MPI.Comm				`MPI.Comm`
+myrank::Int				`MPI.Rank`
+size::NTuple{N,Int}			global size of data
+rank2indices::Dict{Int, I}		a dict record all MPI ranks to their datas global indices
+ghostdata::Array{T, N}			the data stored or used in this rank
+ghostindices::IG			the indices of ghostdata stored or used in this rank
+grank2ghostindices::Dict{Int, I}	the data used but not stored in this rank, here provides the host rank and its indices in `ghostdata`
+rrank2localindices::Dict{Int, IG}	the data host in this rank but used in other rank, here provides the remote rank and the indices used in `data`
+```
 """
 mutable struct MPIArray{T, I, N, DT, IG}<:AbstractArray{T, N}
 	data::DT
@@ -104,8 +106,7 @@ mpiarray(T::DataType, Asize::NTuple{N, Int}; args...)  where {N}  = mpiarray(T, 
 """
 	mpiarray(T::DataType, Asize::Vararg{Int, N}; buffersize = 0, comm = MPI.COMM_WORLD, partition = (1, MPI.Comm_size(comm))) where {N}
 
-	construct a mpi array with size `Asize` and distributed on MPI `comm` with partition.
-TBW
+construct a mpi array with size `Asize` and distributed on MPI `comm` with partition.
 """
 function mpiarray(T::DataType, Asize::Vararg{Int, N}; buffersize = 0, comm = MPI.COMM_WORLD, 
 	partition = Tuple(map(i -> begin (i < length(Asize)) ? 1 : MPI.Comm_size(comm) end, 1:N)), 
@@ -144,9 +145,7 @@ end
 """
 	sync!(A::MPIArray)
 
-	Synchronize data in `A` between MPI ranks.
-
-TBW
+Synchronize data in `A` between MPI ranks.
 """
 function sync!(A::MPIArray; comm = A.comm, rank = A.myrank, np = MPI.Comm_size(comm))
 
@@ -171,6 +170,11 @@ function sync!(A::MPIArray; comm = A.comm, rank = A.myrank, np = MPI.Comm_size(c
 end
 
 
+"""
+    gather(A::MPIArray; root = 0)
+
+Gather data in `A` to `root`.
+"""
 function gather(A::MPIArray; root = 0)
 
 	rank = MPI.Comm_rank(A.comm)

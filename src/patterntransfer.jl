@@ -1,12 +1,14 @@
 """
-    创建特殊用途的 data Transfer, 用于层内不同 rank 的Pattern 传输数据
-    Independt data transfer for MPIArray.
-    parent::MPIArray the parent array to transfer
-    reqsIndices::NTuple{N, Union{UnitRange{Int}, Vector{Int}}}
-    reqsDatas::Dict{Int, SparseMatrixCSC{T, Int}} 用 SparseMatrixCSC 保存 pole 和 θϕ 方向的数据，Dict建保存 cube 数据。
-    recv_rk2idcs::Dict{Int, I}
-    send_rk2idcs::Dict{Int, I}
+    PatternTransfer{T, I} <: TRANSFER
 
+创建特殊用途的 data Transfer, 用于八叉树层内不同 `rank` 间的辐射函数、配置函数的 Pattern 传输数据.
+```
+parent::MPIArray{T, IA, 3} where {IA}           待传输的 Pattern `MPIArray`。
+reqsIndices::I                                  需求的索引
+reqsDatas::Dict{Int, SparseMatrixCSC{T, Int}}   用 SparseMatrixCSC 保存 pole 和 θϕ 方向的数据，Dict建保存 cube 数据。
+recv_rk2idcs::Dict{Int, I}                      本 `rank` 接收的 `rank` 以及在本地数据中的索引。
+send_rk2idcs::Dict{Int, I}                      本 `rank` 发送的 `rank` 以及在本地数据中的索引。
+```
 """
 struct PatternTransfer{T, I} <: TRANSFER
     parent::MPIArray{T, IA, 3} where {IA}
@@ -18,10 +20,9 @@ end
 
 
 """
-    PatternTransfer(reqsIndices::NTuple{N, I}, a::MPIArray{T, IA, N}; comm = a.comm, rank = a.myrank, np = MPI.Comm_size(comm)) where {N, I, T, IA}
+    PatternTransfer(reqsIndices::NTuple{3, Union{UnitRange{Int}, Vector{Int}}}, a::MPIArray{T, IA, 3}; comm = a.comm, rank = a.myrank, np = MPI.Comm_size(comm)) where {T, IA}
 
-    创建缓冲区存储 Pattern 交换数据.
-TBW
+创建缓冲区 `PatternTransfer` 存储辐射函数、配置函数 Pattern 交换数据.
 """
 function PatternTransfer(reqsIndices::NTuple{3, Union{UnitRange{Int}, Vector{Int}}}, a::MPIArray{T, IA, 3}; comm = a.comm, rank = a.myrank, np = MPI.Comm_size(comm)) where {T, IA}
     
@@ -64,10 +65,9 @@ function PatternTransfer(reqsIndices::NTuple{3, Union{UnitRange{Int}, Vector{Int
 end
 
 """
-    sync!(t::PatternTransfer; comm = t.parent.comm, rank = t.parent.myrank, np = MPI.Comm_size(comm))
+    sync!(t::PatternTransfer{T, I}; comm = t.parent.comm, rank = t.parent.myrank, np = MPI.Comm_size(comm)) where{T, I}
 
-    sync data in t.
-TBW
+同步 `t` 中的数据.
 """
 function sync!(t::PatternTransfer{T, I}; comm = t.parent.comm, rank = t.parent.myrank, np = MPI.Comm_size(comm)) where{T, I}
 

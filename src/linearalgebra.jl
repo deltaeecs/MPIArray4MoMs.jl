@@ -1,8 +1,6 @@
 
 function Base.:*(A::MPIMatrix, x::AbstractVector)
-
-
-
+    throw("`MPIMatrix` 与 `AbstractVector` 的乘法还未实现。")
 end
 
 function LinearAlgebra.axpy!(a, X::TX, Y::TY) where{TX<:SubOrMPIArray, TY<:SubOrMPIArray}
@@ -49,7 +47,6 @@ function LinearAlgebra.dot(x::T1, y::T2; root = -1) where{T1<:SubOrMPIArray, T2<
     end
 
 end
-
 
 function LinearAlgebra.rmul!(A::T1, r::Number) where{T1<:SubOrMPIArray}
     rmul!(getdata(A), r)

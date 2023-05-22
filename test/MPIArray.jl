@@ -2,7 +2,6 @@ using MPI
 using MPIArray4MoMs
 using LinearAlgebra
 using OffsetArrays
-using BenchmarkTools
 
 using Test
 

@@ -98,10 +98,8 @@ end
 """
     sizeChunks2idxs(Asize, chunks)
 
-    Borrowed form DistributedArray.jl, get the slice of matrix
-    size Asize on each dimension with chunks.
-
-TBW
+Borrowed form [DistributedArray.jl](https://github.com/JuliaParallel/DistributedArrays.jl), get the slice of matrix
+size Asize on each dimension with chunks.
 """
 function sizeChunks2idxs(Asize, chunks)
     cuts = sizeChunks2cuts(Asize, chunks)
@@ -109,11 +107,12 @@ function sizeChunks2idxs(Asize, chunks)
 end
 
 
-"""
+@doc """
     indice2rank(indice::T, rank2indices::Dict{Integer, NTuple{1}}) where{T<:Integer}
+    indice2rank(indice::NTuple{N, T}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}) where{T<:Integer, N, T2}
+    indice2ranks(indice::NTuple{N, Union{UnitRange{T}, Vector{T}}}, rank2indices) where{T, N}
 
-    Get the rank of indice::Int form rank2indices
-TBW
+Get the rank of `indice` form `rank2indices`
 """
 function indice2rank(indice::T, rank2indices::Dict{Integer, NTuple{1}}) where{T<:Integer}
 
@@ -127,13 +126,6 @@ function indice2rank(indice::T, rank2indices::Dict{Integer, NTuple{1}}) where{T<
     return re[1]
 
 end
-
-"""
-    indice2rank(indice::NTuple{N, T}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}) where{T<:Integer, N, T2}
-    
-    Get the rank of indice::Ntuple{N, Int} form rank2indices
-TBW
-"""
 function indice2rank(indice::NTuple{N, T}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}) where{T<:Integer, N, T2}
 
     rks  = map(i -> findall(x -> indice[i] in x[i], rank2indices), 1:N)
@@ -146,14 +138,6 @@ function indice2rank(indice::NTuple{N, T}, rank2indices::Dict{Int, Tuple{Vararg{
     return re[1]
 
 end
-
-
-"""
-    indice2ranks(indice::NTuple{N, T}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}) where{T<:Integer, N, T2}
-        
-    Get the rank of indice::Ntuple{N, Indice} form rank2indices
-TBW
-"""
 function indice2ranks(indice::NTuple{N, Union{UnitRange{T}, Vector{T}}}, rank2indices) where{T, N}
 
     rks  = map(i -> findall(x -> !isempty(intersect(indice[i], x[i])), rank2indices), 1:N)
@@ -167,11 +151,22 @@ end
 
 
 """
-    grank2ghostindices(ghostranks, ghostindices, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T2}
+    Base.searchsortedfirst(a::Vector{T}, x) where {T<:UnitRange}
 
-    get indices of ghost data in its hosting rank.
+找出已排序、无重叠的 Vector{UnitRange} 中的某个 UnitRange 的开头元素，在整个区间中的位置。
+"""
+function Base.searchsortedfirst(a::Vector{T}, x) where {T<:UnitRange}
+    gid  = searchsortedfirst(a, x, by = first)
+    return sum(length, view(a, 1:(gid-1)); init = 0)
+end
 
-TBW
+@doc """
+    grank2ghostindices(ghostranks, ghostindices::Tuple{Vararg{T1, N}}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T1, T2}
+    grank2ghostindices(ghostranks, ghostindices::Tuple{Vararg{T1, N}}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T1<:Vector{Int}, T2}
+    grank2ghostindices(ghostranks, ghostindices::Tuple{Vararg{T1, N}}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T1<:Vector{UnitRange}, T2}
+    grank2ghostindices(ghostranks, ghostindices::NTuple{N, Union{UnitRange{Int}, Vector{Int}}}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T2}
+
+get indices of ghost data in its hosting rank.
 """
 function grank2ghostindices(ghostranks, ghostindices::Tuple{Vararg{T1, N}}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T1, T2}
 
@@ -183,14 +178,6 @@ function grank2ghostindices(ghostranks, ghostindices::Tuple{Vararg{T1, N}}, rank
 
     return grank2gindices
 end
-
-"""
-    grank2ghostindices(ghostranks, ghostindices::Tuple{Vararg{T1, N}}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T1<:Vector{Int}, T2}
-
-    get indices of ghost data in its hosting rank.
-
-TBW
-"""
 function grank2ghostindices(ghostranks, ghostindices::Tuple{Vararg{T1, N}}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T1<:Vector{Int}, T2}
 
     grank2gindices = Dict{Int, Tuple{Vararg{T2, N}}}()
@@ -203,26 +190,6 @@ function grank2ghostindices(ghostranks, ghostindices::Tuple{Vararg{T1, N}}, rank
 
     return grank2gindices
 end
-
-
-"""
-    Base.searchsortedfirst(a::Vector{T}, x) where {T<:UnitRange}
-
-    找出已排序、无重叠的 Vector{UnitRange} 中的某个 UnitRange 的开头元素，在整个区间中的位置。
-TBW
-"""
-function Base.searchsortedfirst(a::Vector{T}, x) where {T<:UnitRange}
-    gid  = searchsortedfirst(a, x, by = first)
-    return sum(length, view(a, 1:(gid-1)); init = 0)
-end
-
-"""
-    grank2ghostindices(ghostranks, ghostindices::Tuple{Vararg{T1, N}}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T1<:Vector{Int}, T2}
-
-    get indices of ghost data in its hosting rank.
-
-TBW
-"""
 function grank2ghostindices(ghostranks, ghostindices::Tuple{Vararg{T1, N}}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T1<:Vector{UnitRange}, T2}
 
     grank2gindices = Dict{Int, Tuple{Vararg{T2, N}}}()
@@ -235,14 +202,6 @@ function grank2ghostindices(ghostranks, ghostindices::Tuple{Vararg{T1, N}}, rank
 
     return grank2gindices
 end
-
-"""
-    grank2ghostindices(ghostranks, ghostindices::Tuple{Vararg{T1, N}}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T1<:Vector{Int}, T2}
-
-    get indices of ghost data in its hosting rank.
-
-TBW
-"""
 function grank2ghostindices(ghostranks, ghostindices::NTuple{N, Union{UnitRange{Int}, Vector{Int}}}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T2}
 
     grank2gindices = Dict{Int, Tuple{Vararg{T2, N}}}()
@@ -258,11 +217,9 @@ end
 
 
 """
-    grank2gdataSize(ghostranks, ghostindices::Tuple{Vararg{T1, N}}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T1<:Vector{Int}, T2}
+    grank2gdataSize(ghostranks, ghostindices::NTuple{N, Union{UnitRange{Int}, Vector{Int}}}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T2}
 
-    get size ghost data.
-
-TBW
+get size ghost data.
 """
 function grank2gdataSize(ghostranks, ghostindices::NTuple{N, Union{UnitRange{Int}, Vector{Int}}}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T2}
 
@@ -277,11 +234,9 @@ function grank2gdataSize(ghostranks, ghostindices::NTuple{N, Union{UnitRange{Int
 end
 
 """
-    grank2indices(ghostranks, ghostindices::Tuple{Vararg{T1, N}}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T1<:Vector{Int}, T2}
+    grank2indices(ghostranks, ghostindices::NTuple{N, Union{UnitRange{T}, Vector{T}}}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T,  T2}
 
-    get global indices of ghost data in ghost ranks.
-
-TBW
+get global indices of ghost data in ghost ranks.
 """
 function grank2indices(ghostranks, ghostindices::NTuple{N, Union{UnitRange{T}, Vector{T}}}, rank2indices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T,  T2}
 
@@ -294,22 +249,24 @@ function grank2indices(ghostranks, ghostindices::NTuple{N, Union{UnitRange{T}, V
     return grank2indices
 end
 
+@doc """
+    intersectInIdc(idc::UnitRange, intersidc)
+    intersectInIdc(idc::Vector, intersidc)
 
+找出 `intersidc` 在 `idc` 中的位置。
+"""
 function intersectInIdc(idc::UnitRange, intersidc)
     intersidc .- (first(idc) - 1)
 end
-
 function intersectInIdc(idc::Vector, intersidc)
     map(i -> searchsortedfirst(idc, i), intersidc)
 end
 
 
 """
-    remoterank2indices(remoteranks, indices::Tuple{T1, N}, rank2ghostindices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{T1<:UnitRange, N, T2}
+    remoterank2indices(remoteranks, indices, rank2ghostindices::Dict{Int, T}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{T}
 
-    get remote rank and relative indices in data.
-
-TBW
+get remote rank and relative indices in data.
 """
 function remoterank2indices(remoteranks, indices, rank2ghostindices::Dict{Int, T}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{T}
 
@@ -324,11 +281,9 @@ function remoterank2indices(remoteranks, indices, rank2ghostindices::Dict{Int, T
 end
 
 """
-remoterank2indices(remoteranks, indices::Tuple{Vararg{T1, N}}, rank2ghostindices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T1<:Vector{Int}, T2}
+    remoterank2indices(remoteranks, indices::Tuple{Vararg{T1, N}}, rank2ghostindices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T1<:UnitRange, T2<:Union{UnitRange, Vector}}
 
-    get indices of ghost data in its hosting rank.
-
-TBW
+get indices of ghost data in its hosting rank.
 """
 function remoterank2indices(remoteranks, indices::Tuple{Vararg{T1, N}}, rank2ghostindices::Dict{Int, Tuple{Vararg{T2, N}}}; localrank = MPI.Comm_rank(MPI.COMM_WORLD)) where{N, T1<:UnitRange, T2<:Union{UnitRange, Vector}}
 
@@ -344,10 +299,9 @@ function remoterank2indices(remoteranks, indices::Tuple{Vararg{T1, N}}, rank2gho
 end
 
 """
-    get_rank2ghostindices(ghostranks, indices, ghostindices)
+    get_rank2ghostindices(ghostranks, indices, ghostindices; comm = MPI.COMM_WORLD, rank = MPI.Comm_rank(comm), np = MPI.Comm_size(comm))
 
-    获取 ghostranks 到 ghostindices 的字典
-TBW
+获取 ghostranks 到 ghostindices 的字典。
 """
 function get_rank2ghostindices(ghostranks, indices, ghostindices; comm = MPI.COMM_WORLD, rank = MPI.Comm_rank(comm), np = MPI.Comm_size(comm))
 
