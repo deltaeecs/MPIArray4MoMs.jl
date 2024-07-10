@@ -1,7 +1,7 @@
 name = "MPIArray4MoMs"
 uuid = "b7f3fe35-ff1f-4dc5-b861-bd211d5a9a4b"
 authors = ["deltaeecs <1225385871@qq.com> and contributors"]
-version = "0.0.1"
+version = "0.0.2"
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -16,7 +16,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 julia = "1"
 MPI = "0.20"
 MPIPreferences =  "0.1"
-OffsetArrays = "1.12 - 1.13"
+OffsetArrays = "1.12 - 1.99"
 Primes = "0.5 - 0.6"
 
 [extras]
