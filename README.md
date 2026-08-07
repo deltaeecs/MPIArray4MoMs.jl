@@ -1,3 +1,10 @@
+> **ARCHIVED / 已归档** — this repository is read-only and no longer maintained.
+>
+> All functionality has been consolidated into **EMMoMSuite.jl** (the latest version of the MoM framework):
+> https://github.com/deltaeecs/EMMoMSuite.jl
+>
+> Please use `using EMMoMSuite` instead (`Pkg.add("EMMoMSuite")`).
+
 # MPIArray4MoMs
 
 ![star](https://img.shields.io/github/stars/deltaeecs/MPIArray4MoMs.jl?style=social)
